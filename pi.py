@@ -194,14 +194,16 @@ class App(tk.Tk):
         self.create_console()
         # self.embed()
 
-    def load_files(self, box, dir):
+    def load_files(self, box, dir, pattern=None):
         box.delete(0, tk.END)
         files = os.listdir(dir)
         box.insert(tk.END, "..")
-        if not self.show_hidden.get():
-            files = filter(lambda file: not file.startswith("."), files)
         files = sorted(files)
         for file in files:
+            if not self.show_hidden.get() and file.startswith("."):
+                    continue
+            if pattern and pattern not in file:
+                    continue
             box.insert(tk.END, file)
             path = os.path.join(dir, file)
             if os.path.islink(path):
@@ -410,17 +412,7 @@ class App(tk.Tk):
     def filter_files(self, event=None):
         tab, box, dir, paths = self.box_context()
         pattern = simpledialog.askstring("Filter", "Pattern:")
-        box.delete(0, tk.END)
-        items = os.listdir(dir)
-        if not self.show_hidden.get():
-            items = filter(lambda f: not f.startswith("."), items)
-        items = sorted(items)
-        box.insert(tk.END, "..")
-        for file in items:
-            if pattern in file.lower():
-                box.insert(tk.END, file)
-        box.selection_set(0)
-        box.activate(0)
+        self.load_files(box, dir, pattern=pattern)
 
     def fuzzy_edit(self, event=None):
         tab, box, dir, paths = self.box_context()
