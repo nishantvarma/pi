@@ -1,9 +1,9 @@
 """
-Modes?
-Alt Tab Switch (Queues)
+Alt-Tab Switch (Queue)
 Adapter Pattern
-Check code duplication.
 File should be OO?
+Modes
+Code Duplication
 Implement fuzzy open in new tab.
 Navigation should remember location.
 Auto-refresh files.
@@ -371,10 +371,12 @@ class App(tk.Tk):
         print(f"Cut {', '.join(names)} from {dir}")
 
     def delete_files(self, event=None):
+        tab, box, dir, paths = self.box_context()
+        if not paths:
+            return
+        names = [os.path.basename(path) for path in paths]
+        print(f"Files to be deleted {', '.join(names)} from {dir}")
         if messagebox.askyesno("Confirm", "Are you sure?"):
-            tab, box, dir, paths = self.box_context()
-            if not paths:
-                return
             for path in paths:
                 if os.path.islink(path):
                     os.remove(path)
@@ -469,8 +471,8 @@ class App(tk.Tk):
         if not paths:
             return
         path = paths[0]
-        file = os.path.basename(path)
-        name = simpledialog.askstring("Rename", f"Rename {file} to:", initialvalue=file)
+        name = os.path.basename(path)
+        name = simpledialog.askstring("Rename", f"Rename {file} to:", initialvalue=name)
         if name:
             os.rename(path, os.path.join(dir, name))
             self.load_files(box, dir)
