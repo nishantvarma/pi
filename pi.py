@@ -1,10 +1,11 @@
 """
-File filter doesn't redraw with colors.
 Delete should set index to next item.
 Navigating back should highlight self.
 Improve guards.
 Alt-Tab Switch (Queue)
 Adapter Pattern
+Seperation of Concern: Don't mix implementation with operations.
+Switching to various implementations should be easy.
 File should be OO?
 Modes
 Code Duplication
@@ -187,6 +188,8 @@ class App(tk.Tk):
         self.configure(bg=config.app.bg)
         self.option_add("*Font", (config.app.font))
         self.iconphoto(False, tk.PhotoImage(file=config.app.icon))
+        self.heading = tk.Label(self, text="Pi")
+        self.heading.pack(fill=tk.X)
         self.tabs = Tabs(self)
         self.tabs.pack(fill=tk.BOTH, expand=True)
         self.new_tab(os.getcwd())
@@ -220,6 +223,7 @@ class App(tk.Tk):
         box.focus_set()
 
     def new_tab(self, path):
+        self.heading.config(text=path)
         frame = ttk.Frame(self.tabs)
         tab = str(frame)
         try:
@@ -236,7 +240,7 @@ class App(tk.Tk):
         scrollbar.config(command=box.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         box.config(yscrollcommand=scrollbar.set)
-        self.data[tab] = {"dir": path, "frame": frame, "history": [path], "box": box}
+        self.data[tab] = {"dir": path, "frame": frame, "box": box}
         box.bind("/", self.filter_files)
         box.bind("<Button-1>", self.hide_menu)
         box.bind("<Button-3>", self.show_menu)
@@ -347,7 +351,7 @@ class App(tk.Tk):
         print(f"Copied {', '.join(names)} from {dir}")
 
     def change_folder(self, tab, box, path):
-        self.data[tab]["history"].append(path)
+        self.heading.config(text=path)
         self.data[tab]["dir"] = path
         self.load_files(box, path)
         self.tabs.tab(tab, text=os.path.basename(path) or path)
@@ -436,7 +440,7 @@ class App(tk.Tk):
         tab, box, dir, path = self.box_context()
         parent = os.path.dirname(dir)
         if parent and parent != dir:
-            self.data[tab]["history"].append(parent)
+            self.heading.config(text=parent)
             self.data[tab]["dir"] = parent
             self.load_files(self.data[tab]["box"], parent)
             self.tabs.tab(tab, text=os.path.basename(parent) or parent)
