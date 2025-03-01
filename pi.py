@@ -54,23 +54,28 @@ def quit(event=None):
         sys.exit(0)
 
 
-class Config:
-    app_title = "Pi"
-    app_icon = "icon.png"
-    app_geometry = "600x400"
-    app_bg = "#ffffff"
-    app_font_name = "Tahoma"
-    app_font_size = 11
-    console_input_bg = "#ffffff"
-    console_input_selectbackground = "#d3d3d3"
-    console_output_bg = "#ffffff"
-    console_output_inactiveselectbackground = "#d3d3d3"
-    explorer_bg = "#ffffff"
-    explorer_selectbackground = "#d3d3d3"
-    explorer_folder_fg = "#0066cc"
-    explorer_executable_fg = "#c04070"
-    explorer_active_link_fg = "#00a0a0"
-    explorer_broken_link_fg = "#888888"
+class config:
+
+    class app:
+        title = "Pi"
+        icon = "icon.png"
+        geometry = "600x400"
+        bg = "#ffffff"
+        font = ("Tahoma", 11)
+
+    class console:
+        input_bg = "#ffffff"
+        input_select_bg = "#d3d3d3"
+        output_bg = "#ffffff"
+        output_inactive_select_bg = "#d3d3d3"
+
+    class explorer:
+        bg = "#ffffff"
+        select_bg = "#d3d3d3"
+        folder_fg = "#0066cc"
+        executable_fg = "#c04070"
+        active_link_fg = "#00a0a0"
+        broken_link_fg = "#888888"
 
 
 class Console:
@@ -95,12 +100,12 @@ class Console:
 
     def apply_theme(self):
         self.output.config(
-            bg=Config.console_output_bg,
-            inactiveselectbackground=Config.console_output_inactiveselectbackground
+            bg=config.console.output_bg,
+            inactiveselectbackground=config.console.output_inactive_select_bg
         )
         self.input.config(
-            bg=Config.console_input_bg,
-            selectbackground=Config.console_input_selectbackground
+            bg=config.console.input_bg,
+            selectbackground=config.console.input_select_bg
         )
 
     def write(self, message):
@@ -175,11 +180,11 @@ class App(tk.Tk):
         super().__init__()
         self.data = {}
         self.show_hidden = tk.BooleanVar(value=False)
-        self.title(Config.app_title)
-        self.geometry(Config.app_geometry)
-        self.configure(bg=Config.app_bg)
-        self.option_add("*Font", (Config.app_font_name, Config.app_font_size))
-        self.iconphoto(False, tk.PhotoImage(file=Config.app_icon))
+        self.title(config.app.title)
+        self.geometry(config.app.geometry)
+        self.configure(bg=config.app.bg)
+        self.option_add("*Font", (config.app.font))
+        self.iconphoto(False, tk.PhotoImage(file=config.app.icon))
         self.tabs = Tabs(self)
         self.tabs.pack(fill=tk.BOTH, expand=True)
         self.new_tab(os.getcwd())
@@ -199,13 +204,13 @@ class App(tk.Tk):
             path = os.path.join(dir, file)
             if os.path.islink(path):
                 if os.path.exists(path):
-                    box.itemconfig(tk.END, {"fg": Config.explorer_active_link_fg})
+                    box.itemconfig(tk.END, {"fg": config.explorer.active_link_fg})
                 else:
-                    box.itemconfig(tk.END, {"fg": Config.explorer_broken_link_fg})
+                    box.itemconfig(tk.END, {"fg": config.explorer.broken_link_fg})
             elif os.path.isdir(path):
-                box.itemconfig(tk.END, {"fg": Config.explorer_folder_fg})
+                box.itemconfig(tk.END, {"fg": config.explorer.folder_fg})
             elif os.access(path, os.X_OK):
-                box.itemconfig(tk.END, {"fg": Config.explorer_executable_fg})
+                box.itemconfig(tk.END, {"fg": config.explorer.executable_fg})
         box.selection_set(0)
         box.activate(0)
         box.focus_set()
@@ -221,7 +226,7 @@ class App(tk.Tk):
         self.tabs.insert(index, frame, text=os.path.basename(path) or path)
         self.tabs.select(frame)
         box = Listbox(frame, selectmode="extended")
-        box.config(bg=Config.explorer_bg, selectbackground=Config.explorer_selectbackground)
+        box.config(bg=config.explorer.bg, selectbackground=config.explorer.select_bg)
         box.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.data[tab] = {"dir": path, "frame": frame, "history": [path], "box": box}
         box.bind("/", self.filter_files)
