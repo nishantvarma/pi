@@ -63,7 +63,7 @@ class config:
         select_bg = "#d3d3d3"
         folder_fg = "#0066cc"
         executable_fg = "#c04070"
-        active_link_fg = "#00a0a0"
+        active_link_fg = "#008b8b"
         broken_link_fg = "#888888"
 
 
