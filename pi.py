@@ -28,12 +28,6 @@ from pathlib import Path
 from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 
 
-def restart(event=None):
-    if messagebox.askyesno("Confirm", "Are you sure?"):
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
-
-
 def exec_with_return(code, globals, locals):
     a = ast.parse(code)
     last_expression = None
@@ -47,6 +41,17 @@ def exec_with_return(code, globals, locals):
     exec(ast.unparse(a), globals, locals)
     if last_expression:
         return eval(last_expression, globals, locals)
+
+
+def restart(event=None):
+    if messagebox.askyesno("Restart", "Are you sure?"):
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+
+
+def quit(event=None):
+    if messagebox.askyesno("Quit", "Are you sure?"):
+        sys.exit(0)
 
 
 class Config:
@@ -263,7 +268,7 @@ class App(tk.Tk):
         try:
             tab = self.tabs.select()
             box = self.data[tab]["box"]
-            if box.size() == 0:  
+            if box.size() == 0:
                 return
             focused = box.index(tk.ACTIVE)
             selection = box.curselection()
@@ -313,7 +318,7 @@ class App(tk.Tk):
             for item in items
         ]
         return tab, box, dir, paths
- 
+
     def browse_folder(self, event=None):
         dir = filedialog.askdirectory()
         if dir:
@@ -498,19 +503,19 @@ class App(tk.Tk):
         self.menu.add_command(label="Open", command=self.open_with)
         if os.path.isdir(path):
             self.menu.add_command(label="Open in New Tab", command=lambda: self.new_tab(path))
-        self.menu.add_separator() 
+        self.menu.add_separator()
         self.menu.add_command(label="Edit", command=self.edit_file)
         self.menu.add_command(label="Rename", command=self.rename_file)
-        self.menu.add_separator() 
+        self.menu.add_separator()
         self.menu.add_command(label="Copy", command=self.copy_files)
         self.menu.add_command(label="Cut", command=self.cut_files)
         self.menu.add_command(label="Paste", command=self.paste_files)
         self.menu.add_command(label="Link", command=self.create_links)
-        self.menu.add_separator() 
+        self.menu.add_separator()
         self.menu.add_command(label="New File", command=self.create_file)
         self.menu.add_command(label="New Folder", command=self.create_folder)
         self.menu.add_command(label="Delete", command=self.delete_files)
-        self.menu.add_separator() 
+        self.menu.add_separator()
         self.menu.add_command(label="Open Terminal", command=self.open_terminal)
         self.menu.add_command(label="Toggle Hidden", command=self.toggle_hidden)
         self.menu.post(event.x_root, event.y_root)
@@ -521,6 +526,7 @@ class App(tk.Tk):
 
 if __name__ == "__main__":
     a = App()
+    a.bind_all("<Control-q>", quit)
     a.bind_all("<Control-r>", restart)
     a.bind_all("<F11>", a.toggle_fullscreen)
     a.geometry("{}x{}+0+0".format(*a.maxsize()))
