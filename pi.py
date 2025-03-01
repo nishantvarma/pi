@@ -43,17 +43,6 @@ def exec_with_return(code, globals, locals):
         return eval(last_expression, globals, locals)
 
 
-def restart(event=None):
-    if messagebox.askyesno("Restart", "Are you sure?"):
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
-
-
-def quit(event=None):
-    if messagebox.askyesno("Quit", "Are you sure?"):
-        sys.exit(0)
-
-
 class config:
 
     class app:
@@ -76,6 +65,17 @@ class config:
         executable_fg = "#c04070"
         active_link_fg = "#00a0a0"
         broken_link_fg = "#888888"
+
+
+def restart(event=None):
+    if messagebox.askyesno("Restart", "Are you sure?"):
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+
+
+def quit(event=None):
+    if messagebox.askyesno("Quit", "Are you sure?"):
+        sys.exit(0)
 
 
 class Console:
@@ -228,6 +228,10 @@ class App(tk.Tk):
         box = Listbox(frame, selectmode="extended")
         box.config(bg=config.explorer.bg, selectbackground=config.explorer.select_bg)
         box.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        scrollbar = tk.Scrollbar(box, orient=tk.VERTICAL)
+        scrollbar.config(command=box.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        box.config(yscrollcommand=scrollbar.set)
         self.data[tab] = {"dir": path, "frame": frame, "history": [path], "box": box}
         box.bind("/", self.filter_files)
         box.bind("<Button-1>", self.hide_menu)
