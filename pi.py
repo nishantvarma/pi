@@ -1,4 +1,5 @@
 """
+Improve guards.
 Alt-Tab Switch (Queue)
 Adapter Pattern
 File should be OO?
@@ -56,7 +57,7 @@ class config:
         input_bg = "#ffffff"
         input_select_bg = "#d3d3d3"
         output_bg = "#ffffff"
-        output_inactive_select_bg = "#d3d3d3"
+        output_select_bg = "#d3d3d3"
 
     class explorer:
         bg = "#ffffff"
@@ -101,7 +102,7 @@ class Console:
     def apply_theme(self):
         self.output.config(
             bg=config.console.output_bg,
-            inactiveselectbackground=config.console.output_inactive_select_bg
+            inactiveselectbackground=config.console.output_select_bg
         )
         self.input.config(
             bg=config.console.input_bg,
@@ -408,8 +409,6 @@ class App(tk.Tk):
     def filter_files(self, event=None):
         tab, box, dir, paths = self.box_context()
         pattern = simpledialog.askstring("Filter", "Pattern:")
-        if not pattern:
-            return
         box.delete(0, tk.END)
         items = os.listdir(dir)
         if not self.show_hidden.get():
