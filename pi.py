@@ -1,4 +1,7 @@
 """
+File filter doesn't redraw with colors.
+Delete should set index to next item.
+Navigating back should highlight self.
 Improve guards.
 Alt-Tab Switch (Queue)
 Adapter Pattern
@@ -6,9 +9,7 @@ File should be OO?
 Modes
 Code Duplication
 Implement fuzzy open in new tab.
-Navigation should remember location.
 Auto-refresh files.
-Hover should highlight the current line.
 Recheck on subprocess cwd.
 Console to shell etc.
 Right click on output should repeat the command.
@@ -494,12 +495,12 @@ class App(tk.Tk):
         self.attributes("-fullscreen", not self.attributes("-fullscreen"))
 
     def toggle_hidden(self, event=None):
-        tab, box, dir, path = self.box_context()
+        tab, box, dir, paths = self.box_context()
         self.show_hidden.set(not self.show_hidden.get())
-        self.load_files(dir, path)
+        self.load_files(box, dir)
 
     def show_menu(self, event):
-        tab, box, dir, path = self.box_context()
+        tab, box, dir, paths = self.box_context()
         selection = box.curselection()
         if len(selection) <= 1:
             box.selection_clear(0, tk.END)
