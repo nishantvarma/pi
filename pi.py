@@ -1,7 +1,5 @@
 """
-Search.
-Revisit focusing the item during Tab switch.
-Make executable.
+Make executble should not change cursor position.
 Delete should set index to next item.
 Navigating back should highlight self.
 Improve guards.
@@ -245,6 +243,7 @@ class App(tk.Tk):
         box.config(yscrollcommand=scrollbar.set)
         self.data[tab] = {"dir": path, "frame": frame, "box": box}
         box.bind("!", self.filter_files)
+        box.bind("*", self.make_executable)
         box.bind("/", self.search_file)
         box.bind("<Button-1>", self.hide_menu)
         box.bind("<Button-3>", self.show_menu)
@@ -432,6 +431,14 @@ class App(tk.Tk):
     def fuzzy_open(self, event=None):
         tab, box, dir, paths = self.box_context()
         subprocess.run(["spawn", "st", "fuzzyopen", dir])
+
+    def make_executable(self, event=None):
+        tab, box, dir, paths = self.box_context()
+        if not paths:
+            return
+        path = paths[0]
+        os.chmod(path, 0o755)
+        self.load_files(box, dir)
 
     def open_file(self, event=None):
         tab, box, dir, paths = self.box_context()
