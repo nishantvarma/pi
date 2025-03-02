@@ -1,6 +1,7 @@
 """
 Search.
 Revisit focusing the item during Tab switch.
+Make executable.
 Delete should set index to next item.
 Navigating back should highlight self.
 Improve guards.
@@ -374,6 +375,8 @@ class App(tk.Tk):
 
     def create_links(self, event=None):
         tab, box, dir, paths = self.box_context()
+        if not hasattr(self, "copied_files"):
+            return
         for file in self.copied_files:
             link = os.path.relpath(file, dir)
             os.symlink(link, os.path.join(dir, os.path.basename(link)))
@@ -462,6 +465,8 @@ class App(tk.Tk):
 
     def paste_files(self, event=None):
         tab, box, dir, paths = self.box_context()
+        if not hasattr(self, "copied_files"):
+            return
         for path in self.copied_files:
             if self.paste_mode == "copy":
                 shutil.copy(path, dir)
