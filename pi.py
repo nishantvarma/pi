@@ -281,6 +281,7 @@ class App(tk.Tk):
             focused = source.index(tk.ACTIVE)
             target.selection_set(focused)
             target.activate(focused)
+            target.see(focused)
             target.focus_set()
 
     def tab_activated(self):
