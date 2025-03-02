@@ -285,6 +285,8 @@ class App(tk.Tk):
         try:
             tab = self.tabs.select()
             box = self.data[tab]["box"]
+            dir = self.data[tab]["dir"]
+            self.heading.config(text=dir)
             if box.size() == 0:
                 return
             focused = box.index(tk.ACTIVE)
