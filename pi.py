@@ -134,7 +134,7 @@ class Console:
         self.output.delete("1.0", tk.END)
         self.output.config(state=tk.DISABLED)
 
-    def readline(self, prompt=""):
+    def readline(self, prompt="Value"):
         return simpledialog.askstring("Input", prompt)
 
 
@@ -244,7 +244,8 @@ class App(tk.Tk):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         box.config(yscrollcommand=scrollbar.set)
         self.data[tab] = {"dir": path, "frame": frame, "box": box}
-        box.bind("/", self.filter_files)
+        box.bind("!", self.filter_files)
+        box.bind("/", self.search_file)
         box.bind("<Button-1>", self.hide_menu)
         box.bind("<Button-3>", self.show_menu)
         box.bind("<Control-c>", self.copy_files)
@@ -494,6 +495,25 @@ class App(tk.Tk):
         tab, box, dir, paths = self.box_context()
         if tab:
             self.load_files(box, dir)
+
+    def search_file(self, event=None):
+        tab, box, dir, paths = self.box_context()
+        pattern = simpledialog.askstring("Search", "Pattern:")
+        if not pattern:
+            return
+        focused = box.index(tk.ACTIVE)
+        if focused is None:
+            focused = -1
+        start = (focused + 1) % box.size()
+        for i in range(box.size()):
+            index = (start + i) % box.size()
+            text = box.get(index).lower()
+            if pattern.lower() in text:
+                box.selection_clear(0, tk.END)
+                box.selection_set(index)
+                box.activate(index)
+                box.see(index)
+                return
 
     def toggle_fullscreen(self, event=None):
         self.attributes("-fullscreen", not self.attributes("-fullscreen"))
