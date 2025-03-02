@@ -1,4 +1,6 @@
 """
+Search.
+Revisit focusing the item during Tab switch.
 Delete should set index to next item.
 Navigating back should highlight self.
 Improve guards.
@@ -278,7 +280,6 @@ class App(tk.Tk):
             focused = source.index(tk.ACTIVE)
             target.selection_set(focused)
             target.activate(focused)
-            target.see(focused)
             target.focus_set()
 
     def tab_activated(self):
@@ -293,7 +294,6 @@ class App(tk.Tk):
             selection = box.curselection()
             if not selection:
                 box.selection_set(focused)
-            box.see(focused)
             box.focus_set()
         except:
             pass
