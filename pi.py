@@ -493,7 +493,7 @@ class App(tk.Tk):
             return
         path = paths[0]
         name = os.path.basename(path)
-        name = simpledialog.askstring("Rename", f"Rename {file} to:", initialvalue=name)
+        name = simpledialog.askstring("Rename", f"Rename {path} to:", initialvalue=name)
         if name:
             os.rename(path, os.path.join(dir, name))
             self.load_files(box, dir)
