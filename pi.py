@@ -1,5 +1,5 @@
 """
-Make executble should not change cursor position.
+Make executable should not change cursor position.
 Delete should set index to next item.
 Navigating back should highlight self.
 Improve guards.
@@ -93,8 +93,8 @@ class Console:
         self.input = tk.Entry(self.frame)
         self.input.pack(fill=tk.X, side=tk.LEFT, expand=True, padx=(4, 0), pady=4)
         self.input.bind("<Control-l>", self.clear)
-        self.input.bind("<Return>", self.execute)
         self.frame.bind("<Enter>", lambda event: self.input.focus_set())
+        self.input.bind("<Return>", self.execute)
         self.button = ttk.Button(self.frame, text="Restart", command=restart)
         self.button.pack(side=tk.RIGHT, padx=4)
         self.button = ttk.Button(self.frame, text="Clear", command=self.clear)
