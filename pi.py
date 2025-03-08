@@ -1,4 +1,5 @@
 """
+Allow resizing.
 Make executable should not change cursor position.
 Delete should set index to next item.
 Navigating back should highlight self.
@@ -48,7 +49,6 @@ def exec_with_return(code, globals, locals):
 
 
 class config:
-
     class app:
         title = "Pi"
         icon = "icon.png"
@@ -83,7 +83,6 @@ def quit(event=None):
 
 
 class Console:
-
     def __init__(self, parent, prompt):
         self.buffer = str()
         self.prompt = prompt
@@ -137,7 +136,6 @@ class Console:
 
 
 class Tabs(ttk.Notebook):
-
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
         self.enable_traversal()
@@ -179,7 +177,6 @@ class Tabs(ttk.Notebook):
 
 
 class App(tk.Tk):
-
     def __init__(self):
         super().__init__()
         self.data = {}
@@ -191,6 +188,12 @@ class App(tk.Tk):
         self.iconphoto(False, tk.PhotoImage(file=config.app.icon))
         self.heading = tk.Label(self, text="Pi")
         self.heading.pack(fill=tk.X)
+        frame = ttk.Frame()
+        frame.pack(fill=tk.X)
+        entry = tk.Entry(frame)
+        entry.pack(side=tk.LEFT, fill=tk.X, padx=4, expand=True)
+        browse_button = tk.Button(frame, text="Browse", command=self.browse_folder)
+        browse_button.pack(side=tk.RIGHT, padx=(0, 4))
         self.tabs = Tabs(self)
         self.tabs.pack(fill=tk.BOTH, expand=True)
         self.new_tab(os.getcwd())
@@ -542,7 +545,8 @@ class App(tk.Tk):
         else:
             path = dir
         self.menu.delete(0, tk.END)
-        self.menu.add_command(label="Open", command=self.open_with)
+        self.menu.add_command(label="Open", command=self.open_file)
+        self.menu.add_command(label="Open With", command=self.open_with)
         if os.path.isdir(path):
             self.menu.add_command(label="Open in New Tab", command=lambda: self.new_tab(path))
         self.menu.add_separator()
