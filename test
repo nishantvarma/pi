@@ -1,0 +1,5 @@
+#!/usr/bin/env rc
+
+python -m pytest tests/test_core.py
+pylint core.py --disable C0114,C0115,C0116,R1705,W0622
+read
