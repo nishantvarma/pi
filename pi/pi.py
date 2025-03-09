@@ -1,16 +1,16 @@
 """
-Make mouse selection same as keyboard selection.
-Allow resizing.
-Repeat previous find.
 Make executable should not change cursor position.
 Delete should set index to next item.
+New file should be auto-selected.
+Make mouse selection same as keyboard selection.
 Navigate back should highlight self.
+Repeat previous find.
+Allow resizing.
 Improve guards.
 Alt-Tab Switch (Queue)
 Adapter Pattern
 Seperation of Concern: Don't mix implementation with operations.
 Switching to various implementations should be easy.
-File should be OO?
 Modes
 Code Duplication
 Implement fuzzy open in new tab.
@@ -18,10 +18,10 @@ Auto-refresh files.
 Recheck on subprocess cwd.
 Console to shell etc.
 Right click on output should repeat the command.
-New file should be auto-selected.
 Tree + Icons?
 Vis Integration
 Scintilla?
+Console could have a context.
 """
 
 import ast
@@ -35,31 +35,8 @@ import traceback
 from pathlib import Path
 from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 
+from pi.config import config
 from pi.core import exec_with_return, Folder
-
-
-class config:
-    class app:
-        title = "Pi"
-        icon = "icon.png"
-        geometry = "600x400"
-        bg = "#ffffff"
-        font = ("Tahoma", 11)
-
-    class console:
-        input_bg = "#ffffff"
-        input_select_bg = "#d3d3d3"
-        output_bg = "#ffffff"
-        output_select_bg = "#d3d3d3"
-
-    class explorer:
-        bg = "#ffffff"
-        select_bg = "#d3d3d3"
-        file_fg = "#000000"
-        folder_fg = "#0066cc"
-        executable_fg = "#c04070"
-        active_link_fg = "#008b8b"
-        broken_link_fg = "#888888"
 
 
 def restart(event=None):
