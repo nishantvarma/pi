@@ -185,7 +185,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.data = {}
-        self.show_hidden = tk.BooleanVar(value=False)
+        self.show_hidden = False
         self.title(config.app.title)
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
