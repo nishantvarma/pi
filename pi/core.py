@@ -5,6 +5,21 @@ from path import Path
 from pi.utils import cd
 
 
+def exec_with_return(code, globals, locals):
+    a = ast.parse(code)
+    last_expression = None
+    if a.body:
+        if isinstance(a_last := a.body[-1], ast.Expr):
+            last_expression = ast.unparse(a.body.pop())
+        elif isinstance(a_last, ast.Assign):
+            last_expression = ast.unparse(a_last.targets[0])
+        elif isinstance(a_last, (ast.AnnAssign, ast.AugAssign)):
+            last_expression = ast.unparse(a_last.target)
+    exec(ast.unparse(a), globals, locals)
+    if last_expression:
+        return eval(last_expression, globals, locals)
+
+
 class Folder():
     def __init__(self, dir):
         self.dir = dir

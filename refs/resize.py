@@ -1,6 +1,6 @@
 #!/usr/bin/python3.13
 
-from tkinter import *
+import tkinter as tk
 
 HORIZONTAL = 1
 VERTICAL   = 2
@@ -8,7 +8,7 @@ VERTICAL   = 2
 
 class App:
     def __init__(self, top):
-        self.Frame1 = Frame(top, bd=5, relief="raised", width=100, height=100)
+        self.Frame1 = tk.Frame(top, bd=5, relief="raised", width=100, height=100)
         self.Frame1.place(x=10, y=10)
         self.Frame1.bind("<ButtonPress-1>", self.start_resize)
         self.Frame1.bind("<ButtonRelease-1>", self.stop_resize)
@@ -41,7 +41,7 @@ class App:
     def stop_resize(self, event):
         self.resize_mode = 0
 
-root = Tk()
+root = tk.Tk()
 root.geometry("800x600+400+50")
 App(root)
 root.mainloop()
