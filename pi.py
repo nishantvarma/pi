@@ -1,8 +1,9 @@
 """
 Allow resizing.
+Repeat previous find.
 Make executable should not change cursor position.
 Delete should set index to next item.
-Navigating back should highlight self.
+Navigate back should highlight self.
 Improve guards.
 Alt-Tab Switch (Queue)
 Adapter Pattern
@@ -19,6 +20,7 @@ Right click on output should repeat the command.
 New file should be auto-selected.
 Tree + Icons?
 Vis Integration
+Scintilla?
 """
 
 import ast
@@ -192,8 +194,11 @@ class App(tk.Tk):
         frame.pack(fill=tk.X)
         entry = tk.Entry(frame)
         entry.pack(side=tk.LEFT, fill=tk.X, padx=4, expand=True)
-        browse_button = tk.Button(frame, text="Browse", command=self.browse_folder)
-        browse_button.pack(side=tk.RIGHT, padx=(0, 4))
+        browse = tk.Button(frame, text="Browse", command=self.browse_folder)
+        browse.pack(side=tk.LEFT, padx=(0, 4))
+        refresh = tk.Button(frame, text="⟳", command = self.refresh_files)
+        refresh.pack(side=tk.LEFT, padx=(0, 4))
+        frame.bind("<Enter>", lambda event: entry.focus_set())
         self.tabs = Tabs(self)
         self.tabs.pack(fill=tk.BOTH, expand=True)
         self.new_tab(os.getcwd())
@@ -259,6 +264,7 @@ class App(tk.Tk):
         box.bind("<Enter>", lambda event: self.tab_activated())
         box.bind("<Escape>", self.hide_menu)
         box.bind("<F2>", self.rename_file)
+        box.bind("<F5>", self.refresh_files)
         box.bind("<Left>", self.open_parent)
         box.bind("<Return>", self.open_file)
         box.bind("<Right>", self.open_file)
@@ -501,7 +507,7 @@ class App(tk.Tk):
             os.rename(path, os.path.join(dir, name))
             self.load_files(box, dir)
 
-    def reset_filter(self):
+    def refresh_files(self, event=None):
         tab, box, dir, paths = self.box_context()
         if tab:
             self.load_files(box, dir)
