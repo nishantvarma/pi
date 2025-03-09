@@ -1,4 +1,5 @@
 """
+Make mouse selection same as keyboard selection.
 Allow resizing.
 Repeat previous find.
 Make executable should not change cursor position.
