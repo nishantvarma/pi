@@ -34,6 +34,8 @@ import traceback
 from pathlib import Path
 from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 
+from pi.core import Folder
+
 
 def exec_with_return(code, globals, locals):
     a = ast.parse(code)
@@ -67,6 +69,7 @@ class config:
     class explorer:
         bg = "#ffffff"
         select_bg = "#d3d3d3"
+        file_fg = "#000000"
         folder_fg = "#0066cc"
         executable_fg = "#c04070"
         active_link_fg = "#008b8b"
@@ -76,7 +79,7 @@ class config:
 def restart(event=None):
     if messagebox.askyesno("Restart", "Are you sure?"):
         python = sys.executable
-        os.execl(python, python, *sys.argv)
+        os.execl(python, python, "-m", "pi.pi")
 
 
 def quit(event=None):
@@ -208,25 +211,12 @@ class App(tk.Tk):
 
     def load_files(self, box, dir, pattern=None):
         box.delete(0, tk.END)
-        files = os.listdir(dir)
         box.insert(tk.END, "..")
-        files = sorted(files)
-        for file in files:
-            if not self.show_hidden.get() and file.startswith("."):
-                    continue
-            if pattern and pattern not in file:
-                    continue
+        folder = Folder(dir)
+        for file in folder.get_files(self.show_hidden, pattern):
             box.insert(tk.END, file)
-            path = os.path.join(dir, file)
-            if os.path.islink(path):
-                if os.path.exists(path):
-                    box.itemconfig(tk.END, {"fg": config.explorer.active_link_fg})
-                else:
-                    box.itemconfig(tk.END, {"fg": config.explorer.broken_link_fg})
-            elif os.path.isdir(path):
-                box.itemconfig(tk.END, {"fg": config.explorer.folder_fg})
-            elif os.access(path, os.X_OK):
-                box.itemconfig(tk.END, {"fg": config.explorer.executable_fg})
+            attr = f"{folder.get_file_type(file)}_fg"
+            box.itemconfig(tk.END, {"fg": getattr(config.explorer, attr)})
         box.selection_set(0)
         box.activate(0)
         box.focus_set()

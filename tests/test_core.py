@@ -2,8 +2,8 @@ import os
 import pytest
 import shutil
 
-from ..core import Folder
-from ..utils import cd
+from pi.core import Folder
+from pi.utils import cd
 
 
 @pytest.fixture()

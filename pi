@@ -1,3 +1,0 @@
-#!/usr/bin/env rc
-
-9 spawn python3.13 pi.py

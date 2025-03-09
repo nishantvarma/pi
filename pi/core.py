@@ -2,7 +2,7 @@ import os
 
 from path import Path
 
-from .utils import cd
+from pi.utils import cd
 
 
 class Folder():
