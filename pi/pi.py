@@ -1,6 +1,6 @@
 """
-Make executable should not change cursor position.
-Delete should set index to next item.
+Current line should respect colors.
+Delete should set index to next possible item.
 New file should be auto-selected.
 Make mouse selection same as keyboard selection.
 Navigate back should highlight self.
@@ -442,7 +442,7 @@ class App(tk.Tk):
             return
         for path in self.copied_files:
             if self.paste_mode == "copy":
-                shutil.copy(path, dir)
+                shutil.copy(path, dir, follow_symlinks=False)
             elif self.paste_mode == "cut":
                 shutil.move(path, dir)
             name = os.path.basename(path)
