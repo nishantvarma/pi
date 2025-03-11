@@ -491,7 +491,7 @@ class App(tk.Tk):
 
     def toggle_hidden(self, event=None):
         tab, box, dir, paths = self.box_context()
-        self.show_hidden.set(not self.show_hidden.get())
+        self.show_hidden = not self.show_hidden
         self.load_files(box, dir)
 
     def show_menu(self, event):
