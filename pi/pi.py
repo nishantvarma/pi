@@ -22,9 +22,10 @@ Tree + Icons?
 Vis Integration
 Scintilla?
 Console could have a context.
+Icon should be inside pi folder?
+https://thonny.org/
 """
 
-import ast
 import os
 import shutil
 import subprocess
@@ -195,7 +196,7 @@ class App(tk.Tk):
         self.tabs.add(frame, text=os.path.basename(path) or path)
         self.tabs.insert(index, frame, text=os.path.basename(path) or path)
         self.tabs.select(frame)
-        box = Listbox(frame, selectmode="extended")
+        box = Listbox(frame, selectmode="extended", activestyle="none")
         box.config(bg=config.explorer.bg, selectbackground=config.explorer.select_bg)
         box.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         scrollbar = tk.Scrollbar(box, orient=tk.VERTICAL)
@@ -400,7 +401,8 @@ class App(tk.Tk):
             return
         path = paths[0]
         os.chmod(path, 0o755)
-        self.load_files(box, dir)
+        focused = box.index(tk.ACTIVE)
+        box.itemconfig(focused, {"fg": config.explorer.executable_fg})
 
     def open_file(self, event=None):
         tab, box, dir, paths = self.box_context()
