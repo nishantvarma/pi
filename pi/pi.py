@@ -1,4 +1,5 @@
 """
+Yank+
 Current line should respect colors.
 Delete should set index to next possible item.
 New file should be auto-selected.
@@ -220,6 +221,7 @@ class App(tk.Tk):
         box.bind("<F2>", self.rename_file)
         box.bind("<F5>", self.refresh_files)
         box.bind("<Left>", self.open_parent)
+        box.bind("<Motion>", self.highlight_current_line)
         box.bind("<Return>", self.open_file)
         box.bind("<Right>", self.open_file)
         box.bind("`", self.duplicate_tab)
@@ -302,6 +304,12 @@ class App(tk.Tk):
             for item in items
         ]
         return tab, box, dir, paths
+
+    def highlight_current_line(self, event):
+        return
+        tab, box, dir, paths = self.box_context()
+        index = box.nearest(event.y)
+        box.itemconfig(index, {"bg": "lightgray", "fg": "black"})
 
     def browse_folder(self, event=None):
         dir = filedialog.askdirectory()
