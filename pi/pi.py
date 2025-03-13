@@ -449,12 +449,21 @@ class App(tk.Tk):
         if not hasattr(self, "copied_files"):
             return
         for path in self.copied_files:
-            if self.paste_mode == "copy":
-                shutil.copy(path, dir, follow_symlinks=False)
-            elif self.paste_mode == "cut":
-                shutil.move(path, dir)
             name = os.path.basename(path)
-            print(f"Pasted {name} to {dir}")
+            dest = os.path.join(dir, name)
+            while os.path.exists(dest):
+                if name := simpledialog.askstring("File Exists", "Enter a new name:", initialvalue=name):
+                    dest = os.path.join(dir, name)
+                else:
+                    print(f"Skipping {path}")
+                    break
+            else:
+                if self.paste_mode == "copy":
+                    print(path, dest)
+                    shutil.copy(path, dest, follow_symlinks=False)
+                elif self.paste_mode == "cut":
+                    shutil.move(path, dest)
+                print(f"Pasted {name} to {dir}")
         if self.paste_mode == "cut":
             self.copied_files = []
         self.load_files(box, dir)
