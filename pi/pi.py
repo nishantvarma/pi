@@ -1,4 +1,6 @@
 """
+Ability to respond to anything that comes in mind a.k.a shell.
+Overwrite?
 Yank+
 Current line should respect colors.
 Delete should set index to next possible item.
