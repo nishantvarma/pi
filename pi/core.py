@@ -1,7 +1,7 @@
 import ast
 import os
 
-from path import Path
+from pathlib import Path
 
 from pi.utils import cd
 
