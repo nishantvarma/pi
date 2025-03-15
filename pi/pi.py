@@ -24,7 +24,6 @@ Tree + Icons?
 Vis Integration
 Scintilla?
 Console could have a context.
-Icon should be inside pi folder?
 https://thonny.org/
 """
 
@@ -156,7 +155,6 @@ class App(tk.Tk):
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
         self.option_add("*Font", (config.app.font))
-        self.iconphoto(False, tk.PhotoImage(file=config.app.icon))
         self.heading = tk.Label(self, text="Pi")
         self.heading.pack(fill=tk.X)
         frame = ttk.Frame()

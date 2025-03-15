@@ -2,7 +2,6 @@ class config:
 
     class app:
         title = "Pi"
-        icon = "icon.png"
         geometry = "600x400"
         bg = "#ffffff"
         font = ("Tahoma", 11)
