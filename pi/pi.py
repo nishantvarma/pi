@@ -1,6 +1,5 @@
 """
 Ability to respond to anything that comes in mind a.k.a shell.
-Overwrite?
 Yank+
 Current line should respect colors.
 Delete should set index to next possible item.
@@ -453,19 +452,19 @@ class App(tk.Tk):
         for path in self.copied_files:
             name = os.path.basename(path)
             dest = os.path.join(dir, name)
-            while os.path.exists(dest):
-                if name := simpledialog.askstring("File Exists", "Enter a new name:", initialvalue=name):
+            if os.path.exists(dest):
+                print(f"Desination {dest} exists")
+                if name := filedialog.asksaveasfilename(initialdir=dir, initialfile=name):
                     dest = os.path.join(dir, name)
                 else:
                     print(f"Skipping {path}")
-                    break
-            else:
-                if self.paste_mode == "copy":
-                    print(path, dest)
-                    shutil.copy(path, dest, follow_symlinks=False)
-                elif self.paste_mode == "cut":
-                    shutil.move(path, dest)
-                print(f"Pasted {name} to {dir}")
+                    continue
+            if self.paste_mode == "copy":
+                print(path, dest)
+                shutil.copy(path, dest, follow_symlinks=False)
+            elif self.paste_mode == "cut":
+                shutil.move(path, dest)
+            print(f"Pasted {path} to {dir} as {name}")
         if self.paste_mode == "cut":
             self.copied_files = []
         self.load_files(box, dir)
