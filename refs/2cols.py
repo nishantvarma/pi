@@ -1,4 +1,4 @@
-#!/usr/bin/python3.13
+#!/usr/bin/env python
 
 import tkinter as tk
 from tkinter import ttk

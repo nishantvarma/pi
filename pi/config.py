@@ -2,7 +2,7 @@ class config:
 
     class app:
         title = "Pi"
-        geometry = "600x400"
+        geometry = "1920x1080"
         bg = "#ffffff"
         font = ("Tahoma", 11)
 

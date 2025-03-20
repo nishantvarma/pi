@@ -1,4 +1,5 @@
 """
+Integrated prompt is more natural.
 Ability to respond to anything that comes in mind a.k.a shell.
 Yank+
 Current line should respect colors.
@@ -171,7 +172,6 @@ class App(tk.Tk):
         self.new_tab(os.getcwd())
         self.menu = Menu(self, tearoff=0)
         self.create_console()
-        # self.embed()
 
     def load_files(self, box, dir, pattern=None):
         box.delete(0, tk.END)
@@ -208,7 +208,9 @@ class App(tk.Tk):
         box.bind("*", self.make_executable)
         box.bind("/", self.search_file)
         box.bind("<Button-1>", self.hide_menu)
-        box.bind("<Button-3>", self.show_menu)
+        box.bind("<Button-2>", self.duplicate_tab)
+        box.bind("<ButtonPress-3>", self.on_press)
+        box.bind("<ButtonRelease-3>", self.on_release)
         box.bind("<Control-c>", self.copy_files)
         box.bind("<Control-o>", self.browse_folder)
         box.bind("<Control-v>", self.paste_files)
@@ -274,21 +276,6 @@ class App(tk.Tk):
         console.frame.pack(side=tk.BOTTOM, fill=tk.X)
         frame = ttk.Frame(self)
         sys.stdin, sys.stdout, sys.stderr = console, console, console
-
-    def check_process(self):
-        if self.process.poll() is not None:
-            print("Terminal exited. Removing embedded frame.")
-            self.win.destroy()
-        else:
-            self.after(500, self.check_process)
-
-    def embed(self):
-        self.win = tk.Frame(self, width=600, height=400, bg="black")
-        self.win.pack(fill=tk.BOTH, expand=True)
-        winid = str(self.win.winfo_id())
-        self.process = subprocess.Popen(["st", "-w", winid])
-        self.win.focus_set()
-        self.check_process()
 
     def box_context(self):
         tab = self.tabs.select()
@@ -510,7 +497,11 @@ class App(tk.Tk):
         self.show_hidden = not self.show_hidden
         self.load_files(box, dir)
 
-    def show_menu(self, event):
+    def on_press(self, event):
+        self.press_start_time = event.time
+
+    def on_release(self, event):
+        press_duration = event.time - self.press_start_time
         tab, box, dir, paths = self.box_context()
         selection = box.curselection()
         if len(selection) <= 1:
@@ -521,6 +512,15 @@ class App(tk.Tk):
             path = os.path.join(dir, box.get(nearest))
         else:
             path = dir
+        if press_duration >= 175:
+            self.show_menu(event, path)
+        else:
+            if os.path.isdir(path):
+                self.duplicate_tab(event)
+            else:
+                self.open_file(event)
+
+    def show_menu(self, event, path):
         self.menu.delete(0, tk.END)
         self.menu.add_command(label="Open", command=self.open_file)
         self.menu.add_command(label="Open With", command=self.open_with)
@@ -552,5 +552,4 @@ if __name__ == "__main__":
     a.bind_all("<Control-q>", quit)
     a.bind_all("<Control-r>", restart)
     a.bind_all("<F11>", a.toggle_fullscreen)
-    a.geometry("{}x{}+0+0".format(*a.maxsize()))
     a.mainloop()
