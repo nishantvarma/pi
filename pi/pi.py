@@ -23,7 +23,6 @@ Console to shell etc.
 Right click on output should repeat the command.
 Tree + Icons?
 Vis Integration
-Scintilla?
 Console could have a context.
 https://thonny.org/
 """
@@ -516,7 +515,7 @@ class App(tk.Tk):
             self.show_menu(event, path)
         else:
             if os.path.isdir(path):
-                self.duplicate_tab(event)
+                self.new_tab(path)
             else:
                 self.open_file(event)
 

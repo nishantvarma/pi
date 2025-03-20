@@ -6,5 +6,7 @@ A simple programmable interface for advanced users, particularly those who prefe
 
 ## Big Ideas
 
-* Shell gives access to everything.
-* O(1) access with auto-completition.
+* Shell is powerful because it gives a language with *commands* as primitives.
+* It can do *anything* expressible in the language.
+* O(1) access with auto-completition is good while typing.
+* GUI is just partial + auto-complete ahead of time.
