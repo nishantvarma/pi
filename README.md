@@ -2,11 +2,11 @@
 
 ## Overview
 
-A simple programmable interface for advanced users, particularly those who prefer organizing files and folders as an outliner.
+A user interface for programmers that displays the filesystem as an outline.
 
-## Big Ideas
+## Design Principles
 
-* Shell is powerful because it gives a language with *commands* as primitives.
-* It can do *anything* expressible in the language.
-* O(1) access with auto-completition is good while typing.
+* Map thoughts to action in O(1) time.
+* Auto-complete.
+* Shells can do *almost* anything.
 * GUI is just partial + auto-complete ahead of time.

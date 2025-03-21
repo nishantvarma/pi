@@ -1,4 +1,7 @@
 """
+Task manager.
+Progress bar.
+Tab outlines.
 Integrated prompt is more natural.
 Ability to respond to anything that comes in mind a.k.a shell.
 Yank+
@@ -59,8 +62,10 @@ class Console:
         self.frame = ttk.Frame(parent)
         self.output = tk.Text(self.frame, state=tk.DISABLED, height=10)
         self.output.pack(fill=tk.BOTH, padx=4, pady=(4, 0))
+        self.label = tk.Label(self.frame, text="Python")
+        self.label.pack(side=tk.LEFT, padx=4)
         self.input = tk.Entry(self.frame)
-        self.input.pack(fill=tk.X, side=tk.LEFT, expand=True, padx=(4, 0), pady=4)
+        self.input.pack(fill=tk.X, side=tk.LEFT, expand=True, pady=4)
         self.input.bind("<Control-l>", self.clear)
         self.frame.bind("<Enter>", lambda event: self.input.focus_set())
         self.input.bind("<Return>", self.execute)
@@ -437,7 +442,7 @@ class App(tk.Tk):
             name = os.path.basename(path)
             dest = os.path.join(dir, name)
             if os.path.exists(dest):
-                print(f"Desination {dest} exists")
+                print(f"Destination {dest} exists")
                 if name := filedialog.asksaveasfilename(initialdir=dir, initialfile=name):
                     dest = os.path.join(dir, name)
                 else:
@@ -508,7 +513,11 @@ class App(tk.Tk):
             nearest = box.nearest(event.y)
             box.select_set(nearest)
             box.activate(nearest)
-            path = os.path.join(dir, box.get(nearest))
+            name = box.get(nearest)
+            if name == "..":
+                path = os.path.dirname(dir)
+            else:
+                path = os.path.join(dir, box.get(nearest))
         else:
             path = dir
         if press_duration >= 175:
