@@ -1,5 +1,10 @@
 """
+Sorting.
+Self documenting.
 A widget box with auto-complete for multiline inputs. (Like tags in acme).
+Search list
+States?
+Urls
 Task manager.
 Progress bar.
 Tab outlines.
