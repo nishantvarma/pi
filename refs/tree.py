@@ -2,8 +2,10 @@
 
 import os
 import tkinter as tk
-from tkinter import ttk
+
 from pathlib import Path
+from tkinter import ttk
+
 
 class FileExplorer(tk.Frame):
     def __init__(self, parent):
@@ -144,6 +146,7 @@ class FileExplorer(tk.Frame):
         if self.search_results:
             self.search_index = (self.search_index - 1) % len(self.search_results)
             self.highlight_search_result()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
