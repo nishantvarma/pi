@@ -1,9 +1,8 @@
 """
+A widget box with auto-complete for multiline inputs. (Like tags in acme).
 Task manager.
 Progress bar.
 Tab outlines.
-Integrated prompt is more natural.
-Ability to respond to anything that comes in mind a.k.a shell.
 Yank+
 Current line should respect colors.
 Delete should set index to next possible item.

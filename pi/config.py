@@ -4,7 +4,7 @@ class config:
         title = "Pi"
         geometry = "1920x1080"
         bg = "#ffffff"
-        font = ("Tahoma", 11)
+        font = ("Cantarell", 11)
 
     class console:
         input_bg = "#ffffff"
