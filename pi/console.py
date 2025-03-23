@@ -1,10 +1,10 @@
 import tkinter as tk
 
-from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
+from tkinter import simpledialog, ttk
 
 from pi.config import config
-from pi.core import exec_with_return, Folder
-from pi.utils import quit, restart
+from pi.core import exec_with_return
+from pi.utils import restart
 
 
 class Console:
@@ -60,5 +60,4 @@ class Console:
 
     def readline(self, prompt="Value"):
         return simpledialog.askstring("Input", prompt)
-
 

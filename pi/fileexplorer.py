@@ -8,8 +8,9 @@ from tkinter import ttk
 
 
 class FileExplorer(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.pack_propagate(False)
         self.search_frame = tk.Frame(self)
         self.search_frame.pack(fill=tk.X)
         self.toggle_all_button = tk.Button(self.search_frame, text="Toggle All", command=self.toggle_all)
@@ -38,10 +39,10 @@ class FileExplorer(tk.Frame):
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree_y_scroll.config(command=self.tree.yview)
         self.tree_x_scroll.config(command=self.tree.xview)
-        self.tree.column("#0", width=300, stretch=True)
+        self.tree.column("#0", width=150, stretch=True)
         self.style = ttk.Style()
-        self.style.configure("Treeview", font=("Cantarell", 11))
-        self.max_width = 300
+        self.style.configure("Treeview")
+        self.max_width = 150
         self.search_results = []
         self.search_index = -1
         self.tree.bind("<Left>", self.collapse_selected)
