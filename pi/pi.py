@@ -1,13 +1,15 @@
 """
-Sorting.
+Manage windows?
+Sorting
 Self documenting.
-A widget box with auto-complete for multiline inputs. (Like tags in acme).
+A widget box with auto-complete for multiline inputs. (Like tags in Acme).
+Input could be continue to next or repeat.
 Search list
 States?
 Urls
-Task manager.
-Progress bar.
-Tab outlines.
+Task manager
+Progress bar
+Tab outlines
 Yank+
 Current line should respect colors.
 Delete should set index to next possible item.
@@ -28,7 +30,6 @@ Auto-refresh files.
 Recheck on subprocess cwd.
 Console to shell etc.
 Right click on output should repeat the command.
-Tree + Icons?
 Vis Integration
 Console could have a context.
 https://thonny.org/
@@ -45,114 +46,12 @@ from pathlib import Path
 from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 
 from pi.config import config
+from pi.console import Console
 from pi.core import exec_with_return, Folder
-
-
-def restart(event=None):
-    if messagebox.askyesno("Restart", "Are you sure?"):
-        python = sys.executable
-        os.execl(python, python, "-m", "pi.pi")
-
-
-def quit(event=None):
-    if messagebox.askyesno("Quit", "Are you sure?"):
-        sys.exit(0)
-
-
-class Console:
-    def __init__(self, parent, prompt):
-        self.buffer = str()
-        self.prompt = prompt
-        self.frame = ttk.Frame(parent)
-        self.output = tk.Text(self.frame, state=tk.DISABLED, height=10)
-        self.output.pack(fill=tk.BOTH, padx=4, pady=(4, 0))
-        self.label = tk.Label(self.frame, text="Python")
-        self.label.pack(side=tk.LEFT, padx=4)
-        self.input = tk.Entry(self.frame)
-        self.input.pack(fill=tk.X, side=tk.LEFT, expand=True, pady=4)
-        self.input.bind("<Control-l>", self.clear)
-        self.frame.bind("<Enter>", lambda event: self.input.focus_set())
-        self.input.bind("<Return>", self.execute)
-        self.button = ttk.Button(self.frame, text="Restart", command=restart)
-        self.button.pack(side=tk.RIGHT, padx=4)
-        self.button = ttk.Button(self.frame, text="Clear", command=self.clear)
-        self.button.pack(side=tk.RIGHT, padx=4)
-        self.apply_theme()
-        self.locals = {}
-
-    def apply_theme(self):
-        self.output.config(
-            bg=config.console.output_bg,
-            inactiveselectbackground=config.console.output_select_bg
-        )
-        self.input.config(
-            bg=config.console.input_bg,
-            selectbackground=config.console.input_select_bg
-        )
-
-    def write(self, message):
-        self.output.config(state=tk.NORMAL)
-        self.output.insert(tk.END, message)
-        self.output.see(tk.END)
-        self.output.config(state=tk.DISABLED)
-
-    def execute(self, event=None):
-        command = self.input.get().strip()
-        self.input.delete(0, tk.END)
-        if command:
-            self.write(self.prompt + command + "\n")
-            result = exec_with_return(command, globals(), self.locals)
-            if result is not None:
-                self.write(str(result) + "\n")
-
-    def clear(self, event=None):
-        self.output.config(state=tk.NORMAL)
-        self.output.delete("1.0", tk.END)
-        self.output.config(state=tk.DISABLED)
-
-    def readline(self, prompt="Value"):
-        return simpledialog.askstring("Input", prompt)
-
-
-class Tabs(ttk.Notebook):
-    def __init__(self, master=None, **kwargs):
-        super().__init__(master, **kwargs)
-        self.enable_traversal()
-        self.master = master
-        self.dragged = None
-        self.bind("<ButtonPress-1>", self.on_press)
-        self.bind("<ButtonRelease-1>", self.on_release)
-        self.bind("<Button-2>", self.close)
-        self.bind("<Button-3>", self.master.duplicate_tab)
-
-    def on_press(self, event):
-        try:
-            self.dragged = self.index(f"@{event.x},{event.y}")
-        except:
-            pass
-
-    def on_release(self, event):
-        if not hasattr(self, "dragged"):
-            return
-        source = self.dragged
-        del self.dragged
-        try:
-            target = self.index(f"@{event.x},{event.y}")
-        except:
-            return
-        if target != source:
-            self.insert(target, self.tabs()[source])
-        self.master.tab_activated()
-
-    def close(self, event=None):
-        if event:
-            tab = self.tabs()[self.index(f"@{event.x},{event.y}")]
-        else:
-            tab = self.select()
-        if len(self.tabs()) > 1:
-            self.forget(tab)
-            self.master.data.pop(tab)
-            self.master.tab_activated()
+from pi.fileexplorer import FileExplorer
+from pi.tab import Tab
+from pi.tray import Tray
+from pi.utils import quit, restart
 
 
 class App(tk.Tk):
@@ -164,8 +63,12 @@ class App(tk.Tk):
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
         self.option_add("*Font", (config.app.font))
-        self.heading = tk.Label(self, text="Pi")
-        self.heading.pack(fill=tk.X)
+        frame = ttk.Frame(self)
+        self.heading = tk.Label(frame, text="Pi")
+        self.heading.pack(side=tk.LEFT)
+        self.tray = Tray(frame)
+        self.tray.pack(side=tk.RIGHT)
+        frame.pack(fill=tk.X)
         frame = ttk.Frame()
         frame.pack(fill=tk.X)
         entry = tk.Entry(frame)
@@ -175,8 +78,8 @@ class App(tk.Tk):
         refresh = tk.Button(frame, text="⟳", command = self.refresh_files)
         refresh.pack(side=tk.LEFT, padx=(0, 4))
         frame.bind("<Enter>", lambda event: entry.focus_set())
-        self.tabs = Tabs(self)
-        self.tabs.pack(fill=tk.BOTH, expand=True)
+        self.tab = Tab(self)
+        self.tab.pack(fill=tk.BOTH, expand=True)
         self.new_tab(os.getcwd())
         self.menu = Menu(self, tearoff=0)
         self.create_console()
@@ -195,15 +98,15 @@ class App(tk.Tk):
 
     def new_tab(self, path):
         self.heading.config(text=path)
-        frame = ttk.Frame(self.tabs)
+        frame = ttk.Frame(self.tab)
         tab = str(frame)
         try:
-            index = self.tabs.index(self.tabs.select()) + 1
+            index = self.tab.index(self.tab.select()) + 1
         except:
-            index = self.tabs.index("end")
-        self.tabs.add(frame, text=os.path.basename(path) or path)
-        self.tabs.insert(index, frame, text=os.path.basename(path) or path)
-        self.tabs.select(frame)
+            index = self.tab.index("end")
+        self.tab.add(frame, text=os.path.basename(path) or path)
+        self.tab.insert(index, frame, text=os.path.basename(path) or path)
+        self.tab.select(frame)
         box = Listbox(frame, selectmode="extended", activestyle="none")
         box.config(bg=config.explorer.bg, selectbackground=config.explorer.select_bg)
         box.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
@@ -246,7 +149,7 @@ class App(tk.Tk):
         return tab
 
     def duplicate_tab(self, event=None):
-        source = self.tabs.select()
+        source = self.tab.select()
         if source:
             target = self.new_tab(self.data[source]["dir"])
             source = self.data[source]["box"]
@@ -260,7 +163,7 @@ class App(tk.Tk):
 
     def tab_activated(self):
         try:
-            tab = self.tabs.select()
+            tab = self.tab.select()
             box = self.data[tab]["box"]
             dir = self.data[tab]["dir"]
             self.heading.config(text=dir)
@@ -275,7 +178,7 @@ class App(tk.Tk):
             pass
 
     def close_tab(self, event=None):
-        self.tabs.close()
+        self.tab.close()
 
     def create_console(self):
         if hasattr(self, "console"):
@@ -286,7 +189,7 @@ class App(tk.Tk):
         sys.stdin, sys.stdout, sys.stderr = console, console, console
 
     def box_context(self):
-        tab = self.tabs.select()
+        tab = self.tab.select()
         box = self.data[tab]["box"]
         dir = self.data[tab]["dir"]
         selection = box.curselection()
@@ -323,7 +226,7 @@ class App(tk.Tk):
         self.heading.config(text=path)
         self.data[tab]["dir"] = path
         self.load_files(box, path)
-        self.tabs.tab(tab, text=os.path.basename(path) or path)
+        self.tab.tab(tab, text=os.path.basename(path) or path)
 
     def create_file(self, event=None):
         tab, box, dir, paths = self.box_context()
@@ -423,7 +326,7 @@ class App(tk.Tk):
             self.heading.config(text=parent)
             self.data[tab]["dir"] = parent
             self.load_files(self.data[tab]["box"], parent)
-            self.tabs.tab(tab, text=os.path.basename(parent) or parent)
+            self.tab.tab(tab, text=os.path.basename(parent) or parent)
 
     def open_terminal(self, event=None):
         tab, box, dir, paths = self.box_context()

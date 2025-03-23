@@ -19,7 +19,7 @@ class FileExplorer(tk.Frame):
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(self.search_frame, textvariable=self.search_var)
         self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=5)
-        self.search_entry.bind("<Return>", lambda event: self.search_tree())  # Bind Enter key
+        self.search_entry.bind("<Return>", lambda event: self.search_tree())
         self.search_button = tk.Button(self.search_frame, text="Search", command=self.search_tree)
         self.search_button.pack(side=tk.LEFT, padx=5, pady=5)
         self.prev_button = tk.Button(self.search_frame, text="Prev", command=self.search_prev)
@@ -38,7 +38,7 @@ class FileExplorer(tk.Frame):
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree_y_scroll.config(command=self.tree.yview)
         self.tree_x_scroll.config(command=self.tree.xview)
-        self.tree.column("#0", width=300, stretch=False)
+        self.tree.column("#0", width=300, stretch=True)
         self.style = ttk.Style()
         self.style.configure("Treeview", font=("Cantarell", 11))
         self.max_width = 300

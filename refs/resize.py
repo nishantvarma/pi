@@ -14,7 +14,7 @@ class App:
         self.Frame1.bind("<ButtonRelease-1>", self.stop_resize)
         self.Frame1.bind("<Motion>", self.resize_frame)
         self.resize_mode = 0
-        self.cursor = ''
+        self.cursor = None
 
     def check_resize_mode(self, x, y):
         width, height = self.Frame1.cget("width"), self.Frame1.cget("height")
@@ -33,7 +33,7 @@ class App:
             if self.resize_mode & VERTICAL:
                 self.Frame1.config(height=event.y)
         else:
-            cursor = "size" if self.check_resize_mode(event.x, event.y) else str()
+            cursor = "fleur"
             if cursor != self.cursor:
                 self.Frame1.config(cursor=cursor)
                 self.cursor = cursor
