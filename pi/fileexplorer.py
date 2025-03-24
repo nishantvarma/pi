@@ -71,75 +71,106 @@ class FileExplorer(tk.Frame):
             except PermissionError:
                 pass
 
-    def expand_selected(self, event):
+    def expand_selected_recursive(self, max_depth=3):
+        def expand_recursive(node, depth):
+            if depth >= max_depth:
+                return
+            self.expand_one_level(node)
+            for child in self.tree.get_children(node):
+                expand_recursive(child, depth + 1)
         selected = self.tree.selection()
-        if selected:
-            for node in selected:
-                self.tree.item(node, open=True)
-                self.expand_one_level(node)
+        for node in selected:
+            expand_recursive(node, 0)
 
-    def collapse_selected(self, event):
+    def natural_right(self, event):
         selected = self.tree.selection()
-        if selected:
-            for node in selected:
-                self.tree.item(node, open=False)
-
-    def toggle_selected(self, event):
-        selected = self.tree.selection()
-        if selected:
-            for node in selected:
-                self.toggle_node(node)
-
-    def toggle_all(self):
-        for item in self.tree.get_children():
-            self.toggle_node(item)
-
-    def toggle_current(self):
-        selected = self.tree.selection()
-        if selected:
-            for node in selected:
-                self.toggle_node(node)
-
-    def toggle_node(self, item):
-        current_state = self.tree.item(item, "open")
-        self.tree.item(item, open=not current_state)
-        if not current_state:
-            self.expand_one_level(item)
-
-    def search_tree(self):
-        query = self.search_var.get().lower()
-        if not query:
+        if not selected:
             return
-        queue = [(item, 0) for item in self.tree.get_children()]
-        self.search_results = []
-        while queue:
-            item, depth = queue.pop(0)
-            if depth > 6:
-                continue
-            if query in self.tree.item(item, "text").lower():
-                self.search_results.append(item)
-            children = self.tree.get_children(item)
-            if children:
-                queue.extend((child, depth + 1) for child in children)
-        self.search_index = 0
-        self.highlight_search_result()
+        current = selected[0]
+        children = self.tree.get_children(current)
+        if children:
+            next_node = children[0]
+        else:
+            next_node = self.tree.next(current)
+            parent = self.tree.parent(current)
+            while not next_node and parent:
+                next_node = self.tree.next(parent)
+                parent = self.tree.parent(parent)
+        if next_node:
+            self.tree.selection_set(next_node)
+            self.tree.focus(next_node)
+            self.tree.see(next_node)
+        return "break"
 
-    def highlight_search_result(self):
-        if self.search_results:
-            item = self.search_results[self.search_index]
-            self.tree.selection_set(item)
-            self.tree.focus(item)
-            self.tree.see(item)
+    def natural_left(self, event):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        current = selected[0]
+        prev_node = self.tree.prev(current)
+        if prev_node:
+            while self.tree.get_children(prev_node):
+                prev_node = self.tree.get_children(prev_node)[-1]
+        else:
+            prev_node = self.tree.parent(current)
+        if prev_node:
+            self.tree.selection_set(prev_node)
+            self.tree.focus(prev_node)
+            self.tree.see(prev_node)
+        return "break"
 
-    def search_next(self):
-        if self.search_results:
-            self.search_index = (self.search_index + 1) % len(self.search_results)
-            self.highlight_search_result()
+    def natural_right(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        current = selected[0]
+        if not self.tree.get_children(current) or self.tree.item(current, "open"):
+            self.tree.event_generate("<Down>")
+            return "break"
 
-    def search_prev(self):
-        if self.search_results:
-            self.search_index = (self.search_index - 1) % len(self.search_results)
-            self.highlight_search_result()
+    def natural_left(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        current = selected[0]
+        if not self.tree.item(current, "open"):
+            self.tree.event_generate("<Up>")
+            return "break"
+
+    def get_next_node(self, node):
+        children = self.tree.get_children(node)
+        if children:
+            return children[0]
+        while node:
+            sibling = self.tree.next(node)
+            if sibling:
+                return sibling
+            node = self.tree.parent(node)
+        return None
+
+    def get_prev_node(self, node):
+        prev_sibling = self.tree.prev(node)
+        if prev_sibling:
+            last_child = self.get_deepest_child(prev_sibling)
+            return last_child if last_child else prev_sibling
+        return self.tree.parent(node)
+
+    def get_deepest_child(self, node):
+        children = self.tree.get_children(node)
+        while children:
+            node = children[-1]
+            children = self.tree.get_children(node)
+        return node
+
+    def mouse_expand_collapse(self, event):
+        selected = self.tree.selection()
+        if selected:
+            for node in selected:
+                if self.tree.item(node, "open"):
+                    self.tree.item(node, open=False)
+                else:
+                    self.tree.item(node, open=True)
+                    self.expand_one_level(node)
 
 
 if __name__ == "__main__":
