@@ -13,26 +13,20 @@ class FileSystemTree(tk.Frame):
         self.pack_propagate(False)
         self.frame = tk.Frame(self)
         self.frame.pack(fill=tk.BOTH, expand=True)
-        self.tree_x_scroll = ttk.Scrollbar(self.frame, orient="horizontal")
-        self.tree_x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
-        self.tree_y_scroll = ttk.Scrollbar(self.frame, orient="vertical")
-        self.tree_y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.x_scroll = ttk.Scrollbar(self.frame, orient="horizontal")
+        self.x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
+        self.y_scroll = ttk.Scrollbar(self.frame, orient="vertical")
+        self.y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree = ttk.Treeview(self.frame, show="tree")
-        self.tree.config(yscrollcommand=self.tree_y_scroll.set)
-        self.tree.config(xscrollcommand=self.tree_x_scroll.set)
+        self.tree.config(yscrollcommand=self.y_scroll.set)
+        self.tree.config(xscrollcommand=self.x_scroll.set)
         self.tree.pack(fill=tk.BOTH, expand=True)
-        self.tree_y_scroll.config(command=self.tree.yview)
-        self.tree_x_scroll.config(command=self.tree.xview)
+        self.y_scroll.config(command=self.tree.yview)
+        self.x_scroll.config(command=self.tree.xview)
         self.tree.column("#0", minwidth=150, width=300, stretch=True)
         self.tree.bind("<Left>", self.natural_left)
         self.tree.bind("<Right>", self.natural_right)
         self.tree.bind("<Button-3>", self.toggle_fold)
-        self.search_frame = tk.Frame(self)
-        self.search_frame.pack(fill=tk.X)
-        self.toggle_all_button = tk.Button(self.search_frame, text="⯈", command=self.expand_selected_recursive)
-        self.toggle_all_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.refresh_button = tk.Button(self.search_frame, text="Refresh", command=self.refresh_tree)
-        self.refresh_button.pack(side=tk.RIGHT, padx=5, pady=5)
         self.populate_tree(path=path)
 
     def populate_tree(self, path=Path.home(), parent=""):
@@ -71,16 +65,16 @@ class FileSystemTree(tk.Frame):
             except PermissionError:
                 pass
 
-    def expand_selected_recursive(self, max_depth=3):
-        def expand_recursive(node, depth):
-            if depth >= max_depth:
+    def expand_multi_level(self, max_level=3):
+        def expand_recursive(node, level):
+            if level >= max_level:
                 return
             self.expand_one_level(node)
             for child in self.tree.get_children(node):
-                expand_recursive(child, depth + 1)
+                expand_recursive(child, level + 1)
         selected = self.tree.selection()
         for node in selected:
-            expand_recursive(node, 0)
+            expand_multi_level(node, 0)
 
     def natural_left(self, event=None):
         selected = self.tree.selection()
@@ -99,31 +93,6 @@ class FileSystemTree(tk.Frame):
         if not self.tree.get_children(current) or self.tree.item(current, "open"):
             self.tree.event_generate("<Down>")
             return "break"
-
-    def get_next_node(self, node):
-        children = self.tree.get_children(node)
-        if children:
-            return children[0]
-        while node:
-            sibling = self.tree.next(node)
-            if sibling:
-                return sibling
-            node = self.tree.parent(node)
-        return None
-
-    def get_prev_node(self, node):
-        prev_sibling = self.tree.prev(node)
-        if prev_sibling:
-            last_child = self.get_deepest_child(prev_sibling)
-            return last_child if last_child else prev_sibling
-        return self.tree.parent(node)
-
-    def get_deepest_child(self, node):
-        children = self.tree.get_children(node)
-        while children:
-            node = children[-1]
-            children = self.tree.get_children(node)
-        return node
 
     def toggle_fold(self, event):
         selected = self.tree.selection()

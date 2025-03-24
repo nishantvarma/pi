@@ -50,7 +50,7 @@ from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
-from pi.fstree import FileSystemTree
+from pi.filesystemtree import FileSystemTree
 from pi.tab import Tab
 from pi.tray import Tray
 from pi.utils import quit, restart
