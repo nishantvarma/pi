@@ -1,4 +1,6 @@
 """
+Create layout.py
+📁🗀“🗎 🔗➡➡
 Manage windows?
 Sorting
 Self documenting.
@@ -64,12 +66,6 @@ class App(tk.Tk):
         self.option_add("*Font", (config.app.font))
         fileexplorer = FileExplorer(self, width=300)
         fileexplorer.pack(side=tk.LEFT, fill=tk.Y)
-        frame = ttk.Frame(self)
-        self.heading = tk.Label(frame, text="Pi")
-        self.heading.pack(side=tk.LEFT)
-        self.tray = Tray(frame)
-        self.tray.pack(side=tk.RIGHT)
-        frame.pack(fill=tk.X)
         frame = ttk.Frame()
         frame.pack(fill=tk.X)
         entry = tk.Entry(frame)
@@ -81,9 +77,15 @@ class App(tk.Tk):
         frame.bind("<Enter>", lambda event: entry.focus_set())
         self.tab = Tab(self)
         self.tab.pack(fill=tk.BOTH, expand=True)
-        self.new_tab(os.getcwd())
         self.menu = Menu(self, tearoff=0)
         self.create_console()
+        frame = ttk.Frame(self)
+        self.heading = tk.Label(frame, text="Pi")
+        self.heading.pack(side=tk.LEFT)
+        self.tray = Tray(frame)
+        self.tray.pack(side=tk.RIGHT)
+        frame.pack(side=tk.BOTTOM, fill=tk.X)
+        self.new_tab(os.getcwd())
 
     def load_files(self, box, dir, pattern=None):
         box.delete(0, tk.END)
@@ -185,7 +187,7 @@ class App(tk.Tk):
         if hasattr(self, "console"):
             return
         console = self.console = Console(self, prompt="> ")
-        console.frame.pack(side=tk.BOTTOM, fill=tk.X)
+        console.frame.pack(fill=tk.X)
         frame = ttk.Frame(self)
         sys.stdin, sys.stdout, sys.stderr = console, console, console
 
