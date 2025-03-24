@@ -8,7 +8,7 @@ from tkinter import ttk
 
 
 class FileExplorer(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, *args, path=None, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.pack_propagate(False)
         self.tree_frame = tk.Frame(self)
@@ -17,46 +17,39 @@ class FileExplorer(tk.Frame):
         self.tree_x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
         self.tree_y_scroll = ttk.Scrollbar(self.tree_frame, orient="vertical")
         self.tree_y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree = ttk.Treeview(self.tree_frame, show='tree', yscrollcommand=self.tree_y_scroll.set, xscrollcommand=self.tree_x_scroll.set)
+        self.tree = ttk.Treeview(self.tree_frame, show="tree")
+        self.tree.config(yscrollcommand=self.tree_y_scroll.set)
+        self.tree.config(xscrollcommand=self.tree_x_scroll.set)
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree_y_scroll.config(command=self.tree.yview)
         self.tree_x_scroll.config(command=self.tree.xview)
-        self.tree.column("#0", width=150, stretch=True)
-        self.style = ttk.Style()
-        self.style.configure("Treeview")
-        self.max_width = 150
-        self.search_results = []
-        self.search_index = -1
-        self.tree.bind("<Left>", self.collapse_selected)
-        self.tree.bind("<Right>", self.expand_selected)
-        self.tree.bind("<Double-1>", self.toggle_selected)
+        self.tree.column("#0", minwidth=150, width=300, stretch=True)
+        self.tree.bind("<Left>", self.natural_left)
+        self.tree.bind("<Right>", self.natural_right)
+        self.tree.bind("<Button-3>", self.mouse_expand_collapse)
         self.search_frame = tk.Frame(self)
         self.search_frame.pack(fill=tk.X)
-        self.toggle_all_button = tk.Button(self.search_frame, text="⯈", command=self.toggle_all)
+        self.toggle_all_button = tk.Button(self.search_frame, text="⯈", command=self.expand_selected_recursive)
         self.toggle_all_button.pack(side=tk.LEFT, padx=5, pady=5)
-        # self.toggle_current_button = tk.Button(self.search_frame, text="Toggle Current", command=self.toggle_current)
-        # self.toggle_current_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.search_var = tk.StringVar()
-        self.search_entry = tk.Entry(self.search_frame, textvariable=self.search_var)
-        self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=5)
-        self.search_entry.bind("<Return>", lambda event: self.search_tree())
-        self.search_button = tk.Button(self.search_frame, text="Search", command=self.search_tree)
-        self.search_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.prev_button = tk.Button(self.search_frame, text="Prev", command=self.search_prev)
-        self.prev_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.next_button = tk.Button(self.search_frame, text="Next", command=self.search_next)
-        self.next_button.pack(side=tk.LEFT, padx=5, pady=5)
         self.refresh_button = tk.Button(self.search_frame, text="Refresh", command=self.refresh_tree)
         self.refresh_button.pack(side=tk.RIGHT, padx=5, pady=5)
-        self.populate_tree()
+        self.populate_tree(path=path)
 
     def populate_tree(self, path=Path.home(), parent=""):
+        if not path:
+            path = Path.home()
         try:
             for entry in sorted(path.iterdir()):
                 is_dir = entry.is_dir()
                 node = self.tree.insert(parent, "end", text=entry.name, open=False, values=[str(entry)])
                 if is_dir:
                     self.tree.insert(node, "end", text="...")
+            first_node = self.tree.get_children(parent)[:1]
+            if first_node:
+                first_node = first_node[0]
+                self.tree.selection_set(first_node)
+                self.tree.focus(first_node)
+                self.tree.see(first_node)
         except PermissionError:
             pass
 
