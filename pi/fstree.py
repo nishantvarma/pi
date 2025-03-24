@@ -7,17 +7,17 @@ from pathlib import Path
 from tkinter import ttk
 
 
-class FileExplorer(tk.Frame):
+class FileSystemTree(tk.Frame):
     def __init__(self, parent, *args, path=None, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.pack_propagate(False)
-        self.tree_frame = tk.Frame(self)
-        self.tree_frame.pack(fill=tk.BOTH, expand=True)
-        self.tree_x_scroll = ttk.Scrollbar(self.tree_frame, orient="horizontal")
+        self.frame = tk.Frame(self)
+        self.frame.pack(fill=tk.BOTH, expand=True)
+        self.tree_x_scroll = ttk.Scrollbar(self.frame, orient="horizontal")
         self.tree_x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
-        self.tree_y_scroll = ttk.Scrollbar(self.tree_frame, orient="vertical")
+        self.tree_y_scroll = ttk.Scrollbar(self.frame, orient="vertical")
         self.tree_y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree = ttk.Treeview(self.tree_frame, show="tree")
+        self.tree = ttk.Treeview(self.frame, show="tree")
         self.tree.config(yscrollcommand=self.tree_y_scroll.set)
         self.tree.config(xscrollcommand=self.tree_x_scroll.set)
         self.tree.pack(fill=tk.BOTH, expand=True)
@@ -26,7 +26,7 @@ class FileExplorer(tk.Frame):
         self.tree.column("#0", minwidth=150, width=300, stretch=True)
         self.tree.bind("<Left>", self.natural_left)
         self.tree.bind("<Right>", self.natural_right)
-        self.tree.bind("<Button-3>", self.mouse_expand_collapse)
+        self.tree.bind("<Button-3>", self.toggle_fold)
         self.search_frame = tk.Frame(self)
         self.search_frame.pack(fill=tk.X)
         self.toggle_all_button = tk.Button(self.search_frame, text="⯈", command=self.expand_selected_recursive)
@@ -82,42 +82,14 @@ class FileExplorer(tk.Frame):
         for node in selected:
             expand_recursive(node, 0)
 
-    def natural_right(self, event):
+    def natural_left(self, event=None):
         selected = self.tree.selection()
         if not selected:
             return
         current = selected[0]
-        children = self.tree.get_children(current)
-        if children:
-            next_node = children[0]
-        else:
-            next_node = self.tree.next(current)
-            parent = self.tree.parent(current)
-            while not next_node and parent:
-                next_node = self.tree.next(parent)
-                parent = self.tree.parent(parent)
-        if next_node:
-            self.tree.selection_set(next_node)
-            self.tree.focus(next_node)
-            self.tree.see(next_node)
-        return "break"
-
-    def natural_left(self, event):
-        selected = self.tree.selection()
-        if not selected:
-            return
-        current = selected[0]
-        prev_node = self.tree.prev(current)
-        if prev_node:
-            while self.tree.get_children(prev_node):
-                prev_node = self.tree.get_children(prev_node)[-1]
-        else:
-            prev_node = self.tree.parent(current)
-        if prev_node:
-            self.tree.selection_set(prev_node)
-            self.tree.focus(prev_node)
-            self.tree.see(prev_node)
-        return "break"
+        if not self.tree.item(current, "open"):
+            self.tree.event_generate("<Up>")
+            return "break"
 
     def natural_right(self, event=None):
         selected = self.tree.selection()
@@ -126,15 +98,6 @@ class FileExplorer(tk.Frame):
         current = selected[0]
         if not self.tree.get_children(current) or self.tree.item(current, "open"):
             self.tree.event_generate("<Down>")
-            return "break"
-
-    def natural_left(self, event=None):
-        selected = self.tree.selection()
-        if not selected:
-            return
-        current = selected[0]
-        if not self.tree.item(current, "open"):
-            self.tree.event_generate("<Up>")
             return "break"
 
     def get_next_node(self, node):
@@ -162,7 +125,7 @@ class FileExplorer(tk.Frame):
             children = self.tree.get_children(node)
         return node
 
-    def mouse_expand_collapse(self, event):
+    def toggle_fold(self, event):
         selected = self.tree.selection()
         if selected:
             for node in selected:
@@ -174,9 +137,16 @@ class FileExplorer(tk.Frame):
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("File Explorer")
-    root.geometry("600x600")
-    explorer = FileExplorer(root)
-    explorer.pack(fill=tk.BOTH, expand=True)
-    root.mainloop()
+    import shutil
+    try:
+        Path("tree/folder/folder").mkdir(parents=True, exist_ok=True)
+        for file in ["tree/file", "tree/folder/file", "tree/folder/folder/file"]:
+            Path(file).touch()
+        root = tk.Tk()
+        root.title("File Explorer")
+        root.geometry("800x600")
+        explorer = FileSystemTree(root, path=Path("tree"))
+        explorer.pack(fill=tk.BOTH, expand=True)
+        root.mainloop()
+    finally:
+        shutil.rmtree("tree", ignore_errors=True)

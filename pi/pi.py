@@ -50,7 +50,7 @@ from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
-from pi.fileexplorer import FileExplorer
+from pi.fstree import FileSystemTree
 from pi.tab import Tab
 from pi.tray import Tray
 from pi.utils import quit, restart
@@ -65,8 +65,8 @@ class App(tk.Tk):
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
         self.option_add("*Font", (config.app.font))
-        fileexplorer = FileExplorer(self, width=300)
-        fileexplorer.pack(side=tk.LEFT, fill=tk.Y)
+        filesystemtree = FileSystemTree(self, width=300)
+        filesystemtree.pack(side=tk.LEFT, fill=tk.Y)
         frame = ttk.Frame()
         frame.pack(fill=tk.X)
         entry = tk.Entry(frame)
