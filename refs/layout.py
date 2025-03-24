@@ -84,6 +84,17 @@ tab2 = tk.Frame(notebook, bg="#ffffff")
 notebook.add(tab1, text="main.py")
 notebook.add(tab2, text="README.md")
 
+style = ttk.Style()
+
+style.layout("Tab", [('Notebook.tab', {'sticky': 'nswe', 'children':
+   [('Notebook.padding', {'side': 'top', 'sticky': 'nswe', 'children':
+      [('Notebook.label', {'side': 'top', 'sticky': ''})],
+   })],
+})]
+)
+
+style.configure("Tab", focuscolor=style.configure(".")["background"])
+
 editor_frame = tk.Frame(tab1, bg="#ffffff")
 editor_frame.pack(fill=tk.BOTH, expand=True)
 
