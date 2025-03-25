@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import tkinter as tk
+
 from tkinter import ttk
 
 root = tk.Tk()
@@ -13,24 +14,21 @@ ICONS = {
     "search": "🔍",
     "git": "⎇",
     "debug": "🛠",
-    "extensions": "⬇",
 }
 
-top_status = tk.Label(
-    root, text="Pi", bg="#666666", fg="white", anchor="w", padx=10, font=("Segoe UI", 9)
-)
-top_status.pack(side=tk.TOP, fill=tk.X)
+top = tk.Frame(root)
+top.pack(side=tk.TOP, fill=tk.X)
 
-main_pane = tk.PanedWindow(root, orient=tk.HORIZONTAL, bg="#f3f3f3", sashwidth=6)
-main_pane.pack(fill=tk.BOTH, expand=True)
+main = tk.PanedWindow(root, orient=tk.HORIZONTAL, bg="#f3f3f3", sashwidth=6)
+main.pack(fill=tk.BOTH, expand=True)
 
-left_panel = tk.Frame(main_pane, width=48, bg="#e8e8e8")
+left_panel = tk.Frame(main, width=48, bg="#e8e8e8")
 left_panel.pack_propagate(False)
 
 menu_btn = tk.Button(
     left_panel,
     text=ICONS["menu"],
-    font=("Arial", 12),
+    font=("Ubuntu", 12),
     bg="#e8e8e8",
     fg="#000000",
     bd=0,
@@ -38,11 +36,11 @@ menu_btn = tk.Button(
 )
 menu_btn.pack(fill=tk.X, pady=(10, 5))
 
-for icon_name in ["explorer", "search", "git", "debug", "extensions"]:
+for icon_name in ["explorer", "search", "git", "debug"]:
     btn = tk.Button(
         left_panel,
         text=ICONS[icon_name],
-        font=("Arial", 12),
+        font=("Ubuntu", 12),
         bg="#e8e8e8",
         fg="#000000",
         bd=0,
@@ -50,10 +48,10 @@ for icon_name in ["explorer", "search", "git", "debug", "extensions"]:
     )
     btn.pack(fill=tk.X, pady=3)
 
-main_pane.add(left_panel, stretch="never")  # This prevents resizing
+main.add(left_panel, stretch="never")
 
-sidebar_pane = tk.PanedWindow(main_pane, orient=tk.HORIZONTAL, sashwidth=6)
-main_pane.add(sidebar_pane)
+sidebar_pane = tk.PanedWindow(main, orient=tk.HORIZONTAL, sashwidth=6)
+main.add(sidebar_pane)
 
 sidebar = tk.Frame(sidebar_pane, width=250, bg="#f3f3f3")
 sidebar.pack_propagate(False)
@@ -104,7 +102,7 @@ line_numbers = tk.Text(
     padx=4,
     pady=4,
     bg="#f5f5f5",
-    fg="#666666",
+    fg="#444444",
     bd=0,
     font=("Consolas", 10),
 )
@@ -152,25 +150,18 @@ terminal.insert("1.0", "$ python main.py\nHello, World!\n\n")
 console_notebook.pack(fill=tk.BOTH, expand=True)
 editor_pane.add(console_frame)
 
-status_bar = tk.Frame(root, bg="#666666", height=22)
+status_bar = tk.Frame(root, bg="#444444", height=22)
 status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
-tk.Label(
-    status_bar, text="main.py", bg="#666666", fg="white", padx=10, font=("Segoe UI", 9)
-).pack(side=tk.LEFT)
-tk.Label(
-    status_bar, text="UTF-8", bg="#666666", fg="white", padx=10, font=("Segoe UI", 9)
-).pack(side=tk.LEFT)
-tk.Label(
-    status_bar,
-    text="Ln 1, Col 1",
-    bg="#666666",
-    fg="white",
-    padx=10,
-    font=("Segoe UI", 9),
-).pack(side=tk.LEFT)
-tk.Label(
-    status_bar, text="Python", bg="#666666", fg="white", padx=10, font=("Segoe UI", 9)
-).pack(side=tk.RIGHT)
+tk.Label(status_bar, text="main.py", bg="#444444", fg="white", padx=10, font=("Segoe UI", 9)).pack(side=tk.LEFT)
+tk.Label(status_bar, text="UTF-8", bg="#444444", fg="white", padx=10, font=("Segoe UI", 9)).pack(side=tk.LEFT)
+tk.Label(status_bar, text="Ln 1, Col 1", bg="#444444", fg="white", padx=10, font=("Segoe UI", 9)).pack(side=tk.LEFT)
+tk.Label(status_bar, text="Python", bg="#444444", fg="white", padx=10, font=("Segoe UI", 9)).pack(side=tk.RIGHT)
 
-root.mainloop()
+if __name__ == "__main__":
+    heading = tk.Label(top)
+    heading.config(font=("Segoe UI", 9))
+    heading.config(bg="#444444", fg="#ffffff")
+    heading.config(text="Heading")
+    heading.pack(fill=tk.X)
+    root.mainloop()

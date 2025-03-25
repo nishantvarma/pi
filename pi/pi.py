@@ -1,7 +1,5 @@
 """
-Ribbon Menu
-Create layout.py
-📁🗀“🗎 🔗➡➡
+Recent Commands
 Manage windows?
 Sorting
 Self documenting.
@@ -36,6 +34,7 @@ Right click on output should repeat the command.
 Vis Integration
 Console could have a context.
 https://thonny.org/
+https://github.com/kdltr/ma
 """
 
 import os
@@ -50,7 +49,7 @@ from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
-from pi.filesystemtree import FileSystemTree
+from pi.fstree import FSTree
 from pi.tab import Tab
 from pi.tray import Tray
 from pi.utils import quit, restart
@@ -65,8 +64,14 @@ class App(tk.Tk):
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
         self.option_add("*Font", (config.app.font))
-        filesystemtree = FileSystemTree(self, width=300)
-        filesystemtree.pack(side=tk.LEFT, fill=tk.Y)
+        fstree = FSTree(self, width=300)
+        fstree.pack(side=tk.LEFT, fill=tk.Y)
+        frame = ttk.Frame(self)
+        self.heading = tk.Label(frame, text="Pi")
+        self.heading.pack(side=tk.LEFT)
+        self.tray = Tray(frame)
+        self.tray.pack(side=tk.RIGHT)
+        frame.pack(side=tk.TOP, fill=tk.X)
         frame = ttk.Frame()
         frame.pack(fill=tk.X)
         entry = tk.Entry(frame)
@@ -80,12 +85,6 @@ class App(tk.Tk):
         self.tab.pack(fill=tk.BOTH, expand=True)
         self.menu = Menu(self, tearoff=0)
         self.create_console()
-        frame = ttk.Frame(self)
-        self.heading = tk.Label(frame, text="Pi")
-        self.heading.pack(side=tk.LEFT)
-        self.tray = Tray(frame)
-        self.tray.pack(side=tk.RIGHT)
-        frame.pack(side=tk.BOTTOM, fill=tk.X)
         self.new_tab(os.getcwd())
 
     def load_files(self, box, dir, pattern=None):

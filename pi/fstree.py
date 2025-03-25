@@ -7,7 +7,7 @@ from pathlib import Path
 from tkinter import ttk
 
 
-class FileSystemTree(tk.Frame):
+class FSTree(tk.Frame):
     def __init__(self, parent, *args, path=None, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.pack_propagate(False)
@@ -112,9 +112,9 @@ if __name__ == "__main__":
         for file in ["tree/file", "tree/folder/file", "tree/folder/folder/file"]:
             Path(file).touch()
         root = tk.Tk()
-        root.title("File Explorer")
+        root.title("File System Tree")
         root.geometry("800x600")
-        explorer = FileSystemTree(root, path=Path("tree"))
+        explorer = FSTree(root, path=Path("tree"))
         explorer.pack(fill=tk.BOTH, expand=True)
         root.mainloop()
     finally:
