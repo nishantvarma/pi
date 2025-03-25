@@ -467,6 +467,8 @@ class App(tk.Tk):
 
 if __name__ == "__main__":
     a = App()
+    style = ttk.Style()
+    style.configure(".", font=("DejaVu Sans Mono", 12))
     a.bind_all("<Control-q>", quit)
     a.bind_all("<Control-r>", restart)
     a.bind_all("<F11>", a.toggle_fullscreen)
