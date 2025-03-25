@@ -7,8 +7,6 @@ class Tab(ttk.Notebook):
         self.enable_traversal()
         self.parent = parent
         self.dragged = None
-        self.style = ttk.Style()
-        self.style.configure("TNotebook.Tab", font=("DejaVu Sans Mono", 11))
         self.bind("<ButtonPress-1>", self.on_press)
         self.bind("<ButtonRelease-1>", self.on_release)
         self.bind("<Button-2>", self.close)
