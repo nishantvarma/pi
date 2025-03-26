@@ -1,4 +1,5 @@
 """
+Middle Click?
 Recent Commands
 Manage windows?
 Sorting
@@ -87,16 +88,19 @@ class App(tk.Tk):
         self.create_console()
         self.new_tab(os.getcwd())
 
-    def load_files(self, box, dir, pattern=None):
+    def load_files(self, box, dir, pattern=None, selection=None):
         box.delete(0, tk.END)
         box.insert(tk.END, "..")
         folder = Folder(dir)
-        for file in folder.get_files(self.show_hidden, pattern):
+        position = 0
+        for index, file in enumerate(folder.get_files(self.show_hidden, pattern)):
             box.insert(tk.END, file)
             attr = f"{folder.get_file_type(file)}_fg"
             box.itemconfig(tk.END, {"fg": getattr(config.explorer, attr)})
-        box.selection_set(0)
-        box.activate(0)
+            if selection and file == selection:
+                position = index
+        box.selection_set(position + 1)
+        box.activate(position + 1)
         box.focus_set()
 
     def new_tab(self, path):
@@ -189,7 +193,7 @@ class App(tk.Tk):
         console = self.console = Console(self, prompt="> ")
         console.frame.pack(fill=tk.X)
         frame = ttk.Frame(self)
-        sys.stdin, sys.stdout, sys.stderr = console, console, console
+        #sys.stdin, sys.stdout, sys.stderr = console, console, console
 
     def box_context(self):
         tab = self.tab.select()
@@ -325,10 +329,11 @@ class App(tk.Tk):
     def open_parent(self, event=None):
         tab, box, dir, path = self.box_context()
         parent = os.path.dirname(dir)
+        name = os.path.basename(dir)
         if parent and parent != dir:
             self.heading.config(text=parent)
             self.data[tab]["dir"] = parent
-            self.load_files(self.data[tab]["box"], parent)
+            self.load_files(self.data[tab]["box"], parent, selection=name)
             self.tab.tab(tab, text=os.path.basename(parent) or parent)
 
     def open_terminal(self, event=None):
