@@ -50,7 +50,6 @@ from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
-from pi.fstree import FSTree
 from pi.tab import Tab
 from pi.tray import Tray
 from pi.utils import quit, restart
@@ -65,23 +64,21 @@ class App(tk.Tk):
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
         self.option_add("*Font", (config.app.font))
-        fstree = FSTree(self, width=300)
-        fstree.pack(side=tk.LEFT, fill=tk.Y)
         frame = ttk.Frame(self)
         self.heading = tk.Label(frame, text="Pi")
-        self.heading.pack(side=tk.LEFT)
-        self.tray = Tray(frame)
-        self.tray.pack(side=tk.RIGHT)
-        frame.pack(side=tk.TOP, fill=tk.X)
+        # self.heading.pack(side=tk.LEFT)
+        # self.tray = Tray(frame)
+        # self.tray.pack(side=tk.RIGHT)
+        # frame.pack(side=tk.TOP, fill=tk.X)
         frame = ttk.Frame()
         frame.pack(fill=tk.X)
-        entry = tk.Entry(frame)
-        entry.pack(side=tk.LEFT, fill=tk.X, padx=4, expand=True)
-        browse = tk.Button(frame, text="Browse", command=self.browse_folder)
-        browse.pack(side=tk.LEFT, padx=(0, 4))
-        refresh = tk.Button(frame, text="⟳", command = self.refresh_files)
-        refresh.pack(side=tk.LEFT, padx=(0, 4))
-        frame.bind("<Enter>", lambda event: entry.focus_set())
+        # entry = tk.Entry(frame)
+        # entry.pack(side=tk.LEFT, fill=tk.X, padx=4, expand=True)
+        tag = tk.Text(self, bg="#dddddd", height=2, bd=1, relief="solid", highlightthickness=0)
+        tag.pack(fill=tk.X)
+        # refresh = tk.Button(frame, text="⟳", command = self.refresh_files)
+        # refresh.pack(side=tk.LEFT, padx=(0, 4))
+        # frame.bind("<Enter>", lambda event: entry.focus_set())
         self.tab = Tab(self)
         self.tab.pack(fill=tk.BOTH, expand=True)
         self.menu = Menu(self, tearoff=0)
