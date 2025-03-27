@@ -4,8 +4,8 @@ import tkinter as tk
 
 
 class EditorWindow(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
         self.pack(fill=tk.BOTH, expand=True)
         self.tag = tk.Text(self, height=1, bg="#ffffea", bd=1, relief="flat", highlightthickness=0)
         self.tag.pack(fill=tk.X)
@@ -14,8 +14,8 @@ class EditorWindow(tk.Frame):
 
 
 class MainLayout(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
         self.pack(fill=tk.BOTH, expand=True)
         self.top = tk.Text(self, height=1, bg="#d3d3d3", bd=0, relief="flat", highlightthickness=0)
         self.top.pack(fill=tk.X)
