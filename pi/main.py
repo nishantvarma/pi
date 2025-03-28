@@ -37,6 +37,7 @@ Vis Integration
 Console could have a context.
 https://thonny.org/
 https://github.com/kdltr/ma
+clifm
 """
 
 import os
