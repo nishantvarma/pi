@@ -1,4 +1,5 @@
 """
+Maybe it should just be a shell listing directory.
 Middle Click?
 Recent Commands
 Manage windows?

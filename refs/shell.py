@@ -1,33 +1,43 @@
 #!/usr/bin/env python
 
 import os
-import subprocess
-import threading
+import pty
+import select
+import sys
+import termios
 
-def read_output(process):
-    while True:
-        output = process.stdout.readline()
-        if output:
-            print(output.strip())
-        if process.poll() is not None:
-            break
 
-process = subprocess.Popen(
-    ["rc"],
-    stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-    text=True,
-    bufsize=1
-)
-os.set_blocking(process.stdout.fileno(), False)
+def configure_pty(fd):
+    attrs = termios.tcgetattr(fd)
+    attrs[3] &= ~termios.ECHO
+    termios.tcsetattr(fd, termios.TCSANOW, attrs)
 
-threading.Thread(target=read_output, args=(process,), daemon=True).start()
 
-while True:
-    command = input()
-    if command.strip().lower() == "exit":
-        process.terminate()
-        break
-    process.stdin.write(command + "\n")
-    process.stdin.flush()
+def spawn_shell():
+    master, slave = pty.openpty()
+    pid = os.fork()
+    if pid == 0:
+        os.setsid()
+        os.dup2(slave, 0)
+        os.dup2(slave, 1)
+        os.dup2(slave, 2)
+        os.close(master)
+        configure_pty(slave)
+        os.execlp("rc", "rc")
+    else:
+        os.close(slave)
+        while True:
+            try:
+                rlist, _, _ = select.select([sys.stdin, master], [], [])
+                if sys.stdin in rlist:
+                    command = sys.stdin.readline()
+                    os.write(master, command.encode())
+                if master in rlist:
+                    output = os.read(master, 4096)
+                    sys.stdout.buffer.write(output)
+                    sys.stdout.flush()
+            except KeyboardInterrupt:
+                break
+
+
+spawn_shell()
