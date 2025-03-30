@@ -29,7 +29,6 @@ Switching to various implementations should be easy.
 Modes
 Code Duplication
 Implement fuzzy open in new tab.
-Auto-refresh files.
 Recheck on subprocess cwd.
 Console to shell etc.
 Right click on output should repeat the command.
@@ -66,12 +65,6 @@ class App(tk.Tk):
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
         self.option_add("*Font", (config.app.font))
-        frame = ttk.Frame(self)
-        self.heading = tk.Label(frame, text="Pi")
-        frame = ttk.Frame()
-        frame.pack(fill=tk.X)
-        tag = tk.Text(self, bg="#dddddd", height=2, bd=1, relief="solid", highlightthickness=0)
-        tag.pack(fill=tk.X)
         self.tab = Tab(self)
         self.tab.pack(fill=tk.BOTH, expand=True)
         self.menu = Menu(self, tearoff=0)
@@ -94,7 +87,6 @@ class App(tk.Tk):
         box.focus_set()
 
     def new_tab(self, path):
-        self.heading.config(text=path)
         frame = ttk.Frame(self.tab)
         tab = str(frame)
         try:
@@ -163,7 +155,6 @@ class App(tk.Tk):
             tab = self.tab.select()
             box = self.data[tab]["box"]
             dir = self.data[tab]["dir"]
-            self.heading.config(text=dir)
             if box.size() == 0:
                 return
             focused = box.index(tk.ACTIVE)
@@ -183,7 +174,7 @@ class App(tk.Tk):
         console = self.console = Console(self, prompt="> ")
         console.frame.pack(fill=tk.X)
         frame = ttk.Frame(self)
-        #sys.stdin, sys.stdout, sys.stderr = console, console, console
+        sys.stdin, sys.stdout, sys.stderr = console, console, console
 
     def box_context(self):
         tab = self.tab.select()
@@ -220,7 +211,6 @@ class App(tk.Tk):
         print(f"Copied {', '.join(names)} from {dir}")
 
     def change_folder(self, tab, box, path):
-        self.heading.config(text=path)
         self.data[tab]["dir"] = path
         self.load_files(box, path)
         self.tab.tab(tab, text=os.path.basename(path) or path)
@@ -321,7 +311,6 @@ class App(tk.Tk):
         parent = os.path.dirname(dir)
         name = os.path.basename(dir)
         if parent and parent != dir:
-            self.heading.config(text=parent)
             self.data[tab]["dir"] = parent
             self.load_files(self.data[tab]["box"], parent, selection=name)
             self.tab.tab(tab, text=os.path.basename(parent) or parent)

@@ -18,7 +18,7 @@ def cd(dir):
 def restart(event=None):
     if messagebox.askyesno("Restart", "Are you sure?"):
         python = sys.executable
-        os.execl(python, python, "-m", "pi.pi")
+        os.execl(python, python, "-m", "pi.main")
 
 
 def quit(event=None):
