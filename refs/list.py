@@ -2,6 +2,9 @@
 
 import tkinter as tk
 
+from tkinter import ttk
+
+
 class List(tk.Text):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
@@ -36,7 +39,10 @@ class List(tk.Text):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.option_add("*Font", ("Noto Sans", 12))
+    style = ttk.Style()
+    style.configure(".", font=("Noto Sans", 12))
     text = List(root)
     text.pack(fill=tk.BOTH, expand=True)
-    text.insert("1.0", "\n".join([f"Hello, line {i}" for i in range(1, 21)]) + "\n")
+    text.insert("2.0", "\n".join([f"Hello, line {i}" for i in range(1, 21)]) + "\n")
     root.mainloop()

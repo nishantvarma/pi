@@ -1,44 +1,3 @@
-"""
-Maybe it should just be a shell listing directory.
-Middle Click?
-Recent Commands
-Manage windows?
-Sorting
-Self documenting.
-A widget box with auto-complete for multiline inputs. (Like tags in Acme).
-Input could be continue to next or repeat.
-Search list
-States?
-Urls
-Task manager
-Progress bar
-Tab outlines
-Yank+
-Current line should respect colors.
-Delete should set index to next possible item.
-New file should be auto-selected.
-Make mouse selection same as keyboard selection.
-Navigate back should highlight self.
-Repeat previous find.
-Allow resizing.
-Improve guards.
-Alt-Tab Switch (Queue)
-Adapter Pattern
-Seperation of Concern: Don't mix implementation with operations.
-Switching to various implementations should be easy.
-Modes
-Code Duplication
-Implement fuzzy open in new tab.
-Recheck on subprocess cwd.
-Console to shell etc.
-Right click on output should repeat the command.
-Vis Integration
-Console could have a context.
-https://thonny.org/
-https://github.com/kdltr/ma
-clifm
-"""
-
 import os
 import shutil
 import subprocess
@@ -64,11 +23,11 @@ class App(tk.Tk):
         self.title(config.app.title)
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
-        self.option_add("*Font", (config.app.font))
+        self.option_add("*Font", config.app.font)
         self.tab = Tab(self)
         self.tab.pack(fill=tk.BOTH, expand=True)
         self.menu = Menu(self, tearoff=0)
-        self.create_console()
+        # self.create_console()
         self.new_tab(os.getcwd())
 
     def load_files(self, box, dir, pattern=None, selection=None):
@@ -452,7 +411,7 @@ class App(tk.Tk):
 if __name__ == "__main__":
     a = App()
     style = ttk.Style()
-    style.configure(".", font=("Sans", 11))
+    style.configure(".", font=config.app.font)
     a.bind_all("<Control-q>", quit)
     a.bind_all("<Control-r>", restart)
     a.bind_all("<F11>", a.toggle_fullscreen)

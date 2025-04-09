@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!../.venv/bin/python
 
 import tkinter as tk
 
+from tkinter import ttk
 from pi.editor import Editor
 
 
@@ -21,7 +22,9 @@ class Frame(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Layout")
-    root.option_add("*Font", ("Sans", 11))
+    style = ttk.Style()
+    style.configure(".", font=("Noto Sans", 12))
+    root.option_add("*Font", ("Noto Sans", 12))
     frame = Frame(root)
     frame.top.insert("1.0", "/home/nishant/src/pi/layout.py | Del Cut Paste Copy Look Undo ")
     frame.bottom.config(state="normal")
