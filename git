@@ -1,3 +1,4 @@
 #!/usr/bin/env rc
 
 spawn git gui
+# spawn gitk

@@ -61,7 +61,7 @@ class CleanTabs:
             font=self.font, bg="white", relief="flat", bd=0, highlightthickness=0
         )
         editor.insert("1.0", f"This is {name}.")
-        editor.pack_forget()
+        editor.place(x=0, y=0, relwidth=1, relheight=1)  # <- use place
         return editor
 
     def redraw_tabs(self):
@@ -145,9 +145,9 @@ class CleanTabs:
             self.redraw_tabs()
 
     def switch_tab(self, name):
-        if self.active_tab:
-            self.text_widgets[self.active_tab].pack_forget()
-        self.text_widgets[name].pack(fill="both", expand=True)
+        if name not in self.text_widgets:
+            return
+        self.text_widgets[name].tkraise()  # <- use tkraise instead of pack_forget/pack
         self.active_tab = name
         self.redraw_tabs()
 
