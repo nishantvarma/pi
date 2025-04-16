@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import tkinter as tk
 from tkinter import font
 
@@ -16,13 +18,13 @@ class CleanTabs:
 
         self.tab_bar = tk.Text(
             self.tab_frame, height=1, wrap="none", font=self.font,
-            bg="white", bd=0, relief="flat", highlightthickness=0, spacing3=5
+            bg="lightgray", bd=0, relief="flat", highlightthickness=0, spacing3=5
         )
         self.tab_bar.pack(fill="x", side="top")
         self.tab_bar.config(cursor="arrow", state="disabled")
 
-        self.separator = tk.Frame(self.tab_frame, height=1, bg="black", bd=0)
-        self.separator.pack(fill="x", side="bottom")
+        #self.separator = tk.Frame(self.tab_frame, height=1, bg="black", bd=0)
+        #self.separator.pack(fill="x", side="bottom")
 
         self.editor_area = tk.Frame(root, bg="white")
         self.editor_area.pack(fill="both", expand=True)
@@ -61,7 +63,7 @@ class CleanTabs:
             font=self.font, bg="white", relief="flat", bd=0, highlightthickness=0
         )
         editor.insert("1.0", f"This is {name}.")
-        editor.place(x=0, y=0, relwidth=1, relheight=1)  # <- use place
+        editor.place(x=0, y=0, relwidth=1, relheight=1)
         return editor
 
     def redraw_tabs(self):
@@ -79,7 +81,7 @@ class CleanTabs:
                 self.tab_bar.tag_config(
                     name,
                     foreground="black",
-                    underline=True,
+                    font=("Noto Sans", 11, "bold"),
                     spacing1=0,
                     spacing3=3
                 )
@@ -87,7 +89,7 @@ class CleanTabs:
                 self.tab_bar.tag_config(
                     name,
                     foreground="black",
-                    underline=False,
+                    font=("Noto Sans", 11),
                     spacing1=0,
                     spacing3=3
                 )
@@ -147,7 +149,7 @@ class CleanTabs:
     def switch_tab(self, name):
         if name not in self.text_widgets:
             return
-        self.text_widgets[name].tkraise()  # <- use tkraise instead of pack_forget/pack
+        self.text_widgets[name].tkraise()
         self.active_tab = name
         self.redraw_tabs()
 
