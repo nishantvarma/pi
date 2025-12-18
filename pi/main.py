@@ -267,7 +267,7 @@ class App(tk.Tk):
         if os.path.isdir(path):
             self.change_folder(tab, box, path)
         else:
-            subprocess.run(["edit", path], cwd=dir)
+            subprocess.run(["edit", path], cwd=os.path.dirname(path))
 
     def filter_files(self, event=None):
         tab, box, dir, paths = self.box_context()
@@ -319,7 +319,7 @@ class App(tk.Tk):
         if os.path.isdir(path):
             self.change_folder(tab, box, path)
         else:
-            subprocess.run(["open", path], cwd=dir)
+            subprocess.run(["open", path], cwd=os.path.dirname(path))
 
     def open_parent(self, event=None):
         tab, box, dir, path = self.box_context()
@@ -449,7 +449,7 @@ class App(tk.Tk):
             if os.path.dirname(path) == data["dir"]:
                 self.tab.select(tab_id)
                 self.select_file(data["box"], os.path.basename(path))
-                subprocess.run(["open", path], cwd=data["dir"])
+                subprocess.run(["open", path], cwd=os.path.dirname(path))
                 return
         if os.path.isdir(path):
             self.new_tab(path)
@@ -458,7 +458,7 @@ class App(tk.Tk):
             self.new_tab(parent)
             tab = self.tab.select()
             self.select_file(self.data[tab]["box"], os.path.basename(path))
-            subprocess.run(["open", path], cwd=parent)
+            subprocess.run(["open", path], cwd=os.path.dirname(path))
 
     def show_help(self, event=None):
         help.toggle(self, self.bindings)
@@ -530,7 +530,7 @@ def open_path(app, path):
     if os.path.isdir(path):
         app.new_tab(path)
     else:
-        subprocess.run(["open", path])
+        subprocess.run(["open", path], cwd=os.path.dirname(path))
     app.lift()
     app.focus_force()
 
