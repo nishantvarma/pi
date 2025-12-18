@@ -32,7 +32,8 @@ class App(tk.Tk):
             ("/", "Search", self.search_file),
             ("`", "Dup tab", self.duplicate_tab),
             ("e", "Edit", self.edit_file),
-            ("h", "History", self.history_search),
+            ("b", "Buffer", self.search_buffer),
+            ("h", "Help", self.show_help),
             ("l", "Link", self.create_links),
             ("n", "New file", self.create_file),
             ("o", "New folder", self.create_folder),
@@ -42,7 +43,6 @@ class App(tk.Tk):
             ("x", "Fuzzy open", self.fuzzy_open),
             ("z", "Fuzzy edit", self.fuzzy_edit),
             ("Z", "Fuzzy home", self.fuzzy_home),
-            ("?", "Help", self.show_help),
             ("Del", "Delete", None),
             ("F2", "Rename", None),
             ("F5", "Refresh", None),
@@ -122,9 +122,9 @@ class App(tk.Tk):
         box.bind("s", self.open_terminal)
         box.bind("x", self.fuzzy_open)
         box.bind("z", self.fuzzy_edit)
-        box.bind("h", self.history_search)
+        box.bind("b", self.search_buffer)
+        box.bind("h", self.show_help)
         box.bind("Z", self.fuzzy_home)
-        box.bind("?", self.show_help)
         self.load_files(box, path)
         return tab
 
@@ -421,8 +421,9 @@ class App(tk.Tk):
                 return True
         return False
 
-    def history_search(self, event=None):
-        items = history.get_all()
+    def search_buffer(self, event=None):
+        active = [data["dir"] for data in self.data.values()]
+        items = active + [p for p in history.get_all() if p not in active]
         if not items:
             return
         fd, histfile = tempfile.mkstemp()
