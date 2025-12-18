@@ -1,4 +1,5 @@
 import tkinter as tk
+
 from pi.config import config
 
 inst = None
