@@ -443,11 +443,16 @@ class App(tk.Tk):
             if os.path.dirname(path) == data["dir"]:
                 self.tab.select(tab_id)
                 self.select_file(data["box"], os.path.basename(path))
+                subprocess.run(["open", path], cwd=data["dir"])
                 return
         if os.path.isdir(path):
             self.new_tab(path)
         elif os.path.exists(path):
-            subprocess.run(["open", path])
+            parent = os.path.dirname(path)
+            self.new_tab(parent)
+            tab = self.tab.select()
+            self.select_file(self.data[tab]["box"], os.path.basename(path))
+            subprocess.run(["open", path], cwd=parent)
 
     def show_help(self, event=None):
         Help(self, self.bindings)
