@@ -1,3 +1,10 @@
 #!/usr/bin/env rc
 
-python -m pi.main $*
+if (~ $#* 0) {
+	dir=`{pwd}
+}
+if not {
+	dir=`{readlink -f $1}
+}
+
+cd $home/src/pi && python -m pi.main $dir
