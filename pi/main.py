@@ -2,14 +2,17 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import tkinter as tk
 
 from pathlib import Path
 from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 
+from pi import history, server
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
+from pi.help import Help
 from pi.tab import Tab
 from pi.tray import Tray
 from pi.utils import quit, restart
@@ -20,6 +23,30 @@ class App(tk.Tk):
         super().__init__()
         self.data = {}
         self.show_hidden = False
+        self.bindings = [
+            ("↑/↓", "Move", None),
+            ("←/→", "Parent / Open", None),
+            ("Return", "Open", None),
+            ("!", "Filter", self.filter_files),
+            ("*", "Executable", self.make_executable),
+            ("/", "Search", self.search_file),
+            ("`", "Dup tab", self.duplicate_tab),
+            ("e", "Edit", self.edit_file),
+            ("h", "History", self.history_search),
+            ("l", "Link", self.create_links),
+            ("n", "New file", self.create_file),
+            ("o", "New folder", self.create_folder),
+            ("q", "Close tab", self.close_tab),
+            ("s", "Terminal", self.open_terminal),
+            ("x", "Fuzzy open", self.fuzzy_open),
+            ("z", "Fuzzy edit", self.fuzzy_edit),
+            ("Z", "Fuzzy home", self.fuzzy_home),
+            ("?", "Help", self.show_help),
+            ("Del", "Delete", None),
+            ("F2", "Rename", None),
+            ("F5", "Refresh", None),
+            ("Ctrl+c/x/v", "Copy/Cut/Paste", None),
+        ]
         self.title(config.app.title)
         self.geometry(config.app.geometry)
         self.configure(bg=config.app.bg)
@@ -93,6 +120,9 @@ class App(tk.Tk):
         box.bind("s", self.open_terminal)
         box.bind("x", self.fuzzy_open)
         box.bind("z", self.fuzzy_edit)
+        box.bind("h", self.history_search)
+        box.bind("Z", self.fuzzy_home)
+        box.bind("?", self.show_help)
         self.load_files(box, path)
         return tab
 
@@ -228,6 +258,7 @@ class App(tk.Tk):
         if not paths:
             return
         path = paths[0]
+        history.add(path)
         if os.path.isdir(path):
             self.change_folder(tab, box, path)
         else:
@@ -241,6 +272,25 @@ class App(tk.Tk):
     def fuzzy_edit(self, event=None):
         tab, box, dir, paths = self.box_context()
         subprocess.run(["spawn", "st", "fuzzyedit", dir])
+
+    def fuzzy_home(self, event=None):
+        home = os.path.expanduser("~")
+        fd, resultfile = tempfile.mkstemp()
+        os.close(fd)
+        subprocess.run([
+            "st", "-e", "sh", "-c",
+            f"find {home} -maxdepth 3 -type d 2>/dev/null | fzy > {resultfile}"
+        ])
+        try:
+            path = open(resultfile).read().strip()
+        finally:
+            os.unlink(resultfile)
+        if path and os.path.isdir(path):
+            for tab_id, data in self.data.items():
+                if data["dir"] == path:
+                    self.tab.select(tab_id)
+                    return
+            self.new_tab(path)
 
     def fuzzy_open(self, event=None):
         tab, box, dir, paths = self.box_context()
@@ -260,6 +310,7 @@ class App(tk.Tk):
         if not paths:
             return
         path = paths[0]
+        history.add(path)
         if os.path.isdir(path):
             self.change_folder(tab, box, path)
         else:
@@ -285,6 +336,7 @@ class App(tk.Tk):
         path = paths[0]
         program = simpledialog.askstring("Open", "Program:")
         if program:
+            history.add(path)
             subprocess.run(["spawn", program, path], cwd=dir)
 
     def paste_files(self, event=None):
@@ -354,6 +406,52 @@ class App(tk.Tk):
         self.show_hidden = not self.show_hidden
         self.load_files(box, dir)
 
+    def select_file(self, box, name):
+        for i in range(box.size()):
+            if box.get(i) == name:
+                box.selection_clear(0, tk.END)
+                box.selection_set(i)
+                box.activate(i)
+                box.see(i)
+                return True
+        return False
+
+    def history_search(self, event=None):
+        items = history.get_all()
+        if not items:
+            return
+        fd, histfile = tempfile.mkstemp()
+        os.write(fd, "\n".join(items).encode())
+        os.close(fd)
+        fd, resultfile = tempfile.mkstemp()
+        os.close(fd)
+        subprocess.run([
+            "st", "-e", "sh", "-c",
+            f"fzy < {histfile} > {resultfile}"
+        ])
+        try:
+            path = open(resultfile).read().strip()
+        finally:
+            os.unlink(histfile)
+            os.unlink(resultfile)
+        if not path:
+            return
+        for tab_id, data in self.data.items():
+            if data["dir"] == path:
+                self.tab.select(tab_id)
+                return
+            if os.path.dirname(path) == data["dir"]:
+                self.tab.select(tab_id)
+                self.select_file(data["box"], os.path.basename(path))
+                return
+        if os.path.isdir(path):
+            self.new_tab(path)
+        elif os.path.exists(path):
+            subprocess.run(["open", path])
+
+    def show_help(self, event=None):
+        Help(self, self.bindings)
+
     def on_press(self, event):
         self.press_start_time = event.time
 
@@ -408,8 +506,36 @@ class App(tk.Tk):
         self.menu.unpost()
 
 
+def open_path(app, path):
+    path = os.path.abspath(path)
+    if not os.path.exists(path):
+        return
+    for tab_id, data in app.data.items():
+        if data["dir"] == path:
+            app.tab.select(tab_id)
+            app.lift()
+            app.focus_force()
+            return
+    if os.path.isdir(path):
+        app.new_tab(path)
+    else:
+        subprocess.run(["open", path])
+    app.lift()
+    app.focus_force()
+
+
 if __name__ == "__main__":
+    path = sys.argv[1] if len(sys.argv) > 1 else None
+    if path:
+        path = os.path.abspath(os.path.expanduser(path))
+
+    if path and server.is_running():
+        server.send(path)
+        sys.exit(0)
+
     a = App()
+    server.start(lambda p: a.after(0, lambda: open_path(a, p)))
+
     style = ttk.Style()
     style.configure(".", font=config.app.font)
     a.bind_all("<Control-q>", quit)
