@@ -12,7 +12,7 @@ from pi import history, server
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
-from pi.help import Help
+from pi import help
 from pi.tab import Tab
 from pi.tray import Tray
 from pi.utils import quit, restart
@@ -36,7 +36,8 @@ class App(tk.Tk):
             ("l", "Link", self.create_links),
             ("n", "New file", self.create_file),
             ("o", "New folder", self.create_folder),
-            ("q", "Close tab", self.close_tab),
+            ("q", "Close/Quit", self.close_tab),
+            ("Q", "Quit", quit),
             ("s", "Terminal", self.open_terminal),
             ("x", "Fuzzy open", self.fuzzy_open),
             ("z", "Fuzzy edit", self.fuzzy_edit),
@@ -459,7 +460,7 @@ class App(tk.Tk):
             subprocess.run(["open", path], cwd=parent)
 
     def show_help(self, event=None):
-        Help(self, self.bindings)
+        help.toggle(self, self.bindings)
 
     def on_press(self, event):
         self.press_start_time = event.time
