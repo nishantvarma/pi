@@ -540,8 +540,11 @@ if __name__ == "__main__":
     if path:
         path = os.path.abspath(os.path.expanduser(path))
 
-    if path and server.is_running():
-        server.send(path)
+    if server.is_running():
+        if path:
+            server.send(path)
+        else:
+            print("already running")
         sys.exit(0)
 
     a = App()
