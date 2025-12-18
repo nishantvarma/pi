@@ -117,6 +117,7 @@ class App(tk.Tk):
         box.bind("n", self.create_file)
         box.bind("o", self.create_folder)
         box.bind("q", self.close_tab)
+        box.bind("Q", quit)
         box.bind("s", self.open_terminal)
         box.bind("x", self.fuzzy_open)
         box.bind("z", self.fuzzy_edit)
@@ -155,7 +156,10 @@ class App(tk.Tk):
             pass
 
     def close_tab(self, event=None):
-        self.tab.close()
+        if len(self.tab.tabs()) == 1:
+            quit()
+        else:
+            self.tab.close()
 
     def create_console(self):
         if hasattr(self, "console"):
