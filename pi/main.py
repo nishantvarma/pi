@@ -38,7 +38,7 @@ class App(tk.Tk):
             ("n", "New file", self.create_file),
             ("o", "New folder", self.create_folder),
             ("q", "Close/Quit", self.close_tab),
-            ("Q", "Quit", quit),
+            ("Q", "Force quit", None),
             ("s", "Terminal", self.open_terminal),
             ("x", "Fuzzy open", self.fuzzy_open),
             ("z", "Fuzzy edit", self.fuzzy_edit),
@@ -118,7 +118,7 @@ class App(tk.Tk):
         box.bind("n", self.create_file)
         box.bind("o", self.create_folder)
         box.bind("q", self.close_tab)
-        box.bind("Q", quit)
+        box.bind("Q", lambda e: sys.exit(0))
         box.bind("s", self.open_terminal)
         box.bind("x", self.fuzzy_open)
         box.bind("z", self.fuzzy_edit)
