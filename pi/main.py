@@ -276,7 +276,7 @@ class App(tk.Tk):
 
     def fuzzy_edit(self, event=None):
         tab, box, dir, paths = self.box_context()
-        subprocess.run(["spawn", "st", "fuzzyedit", dir])
+        subprocess.run(["spawn", "st", "fuzzyedit"], cwd=dir)
 
     def fuzzy_home(self, event=None):
         home = os.path.expanduser("~")
@@ -299,7 +299,7 @@ class App(tk.Tk):
 
     def fuzzy_open(self, event=None):
         tab, box, dir, paths = self.box_context()
-        subprocess.run(["spawn", "st", "fuzzyopen", dir])
+        subprocess.run(["spawn", "st", "fuzzyopen"], cwd=dir)
 
     def make_executable(self, event=None):
         tab, box, dir, paths = self.box_context()
