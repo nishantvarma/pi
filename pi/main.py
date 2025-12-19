@@ -74,6 +74,7 @@ class App(tk.Tk):
         box.focus_set()
 
     def new_tab(self, path):
+        history.add(path)
         frame = ttk.Frame(self.tab)
         tab = str(frame)
         try:
@@ -293,6 +294,7 @@ class App(tk.Tk):
         if path and os.path.isdir(path):
             for tab_id, data in self.data.items():
                 if data["dir"] == path:
+                    history.add(path)
                     self.tab.select(tab_id)
                     return
             self.new_tab(path)
@@ -326,6 +328,7 @@ class App(tk.Tk):
         parent = os.path.dirname(dir)
         name = os.path.basename(dir)
         if parent and parent != dir:
+            history.add(parent)
             self.data[tab]["dir"] = parent
             self.load_files(self.data[tab]["box"], parent, selection=name)
             self.tab.tab(tab, text=os.path.basename(parent) or parent)
@@ -523,6 +526,7 @@ def open_path(app, path):
         return
     for tab_id, data in app.data.items():
         if data["dir"] == path:
+            history.add(path)
             app.tab.select(tab_id)
             app.lift()
             app.focus_force()
