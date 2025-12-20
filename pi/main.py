@@ -276,14 +276,14 @@ class App(tk.Tk):
         subprocess.run(["spawn", "st", "fuzzyopen", "."], cwd=dir)
 
     def fuzzy_open_global(self, event=None):
-        subprocess.run(["spawn", "st", "fuzzyopen", "-g"])
+        subprocess.run(["spawn", "st", "fuzzyopen", "."], cwd=os.path.expanduser("~"))
 
     def fuzzy_edit_local(self, event=None):
         tab, box, dir, paths = self.box_context()
         subprocess.run(["spawn", "st", "fuzzyedit", "."], cwd=dir)
 
     def fuzzy_edit_global(self, event=None):
-        subprocess.run(["spawn", "st", "fuzzyedit", "-g"])
+        subprocess.run(["spawn", "st", "fuzzyedit", "."], cwd=os.path.expanduser("~"))
 
     def make_executable(self, event=None):
         tab, box, dir, paths = self.box_context()
