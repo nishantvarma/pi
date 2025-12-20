@@ -60,4 +60,3 @@ class Console:
 
     def readline(self, prompt="Value"):
         return simpledialog.askstring("Input", prompt)
-

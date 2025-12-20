@@ -7,7 +7,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, Listbox, Menu, messagebox, simpledialog, ttk
 
-from pi import history, server
+from pi import server
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
@@ -72,7 +72,6 @@ class App(tk.Tk):
         box.focus_set()
 
     def new_tab(self, path):
-        history.add(path)
         frame = ttk.Frame(self.tab)
         tab = str(frame)
         try:
@@ -262,7 +261,6 @@ class App(tk.Tk):
         if not paths:
             return
         path = paths[0]
-        history.add(path)
         if os.path.isdir(path):
             self.change_folder(tab, box, path)
         else:
@@ -301,7 +299,6 @@ class App(tk.Tk):
         if not paths:
             return
         path = paths[0]
-        history.add(path)
         if os.path.isdir(path):
             self.change_folder(tab, box, path)
         else:
@@ -312,7 +309,6 @@ class App(tk.Tk):
         parent = os.path.dirname(dir)
         name = os.path.basename(dir)
         if parent and parent != dir:
-            history.add(parent)
             self.data[tab]["dir"] = parent
             self.load_files(self.data[tab]["box"], parent, selection=name)
             self.tab.tab(tab, text=os.path.basename(parent) or parent)
@@ -328,7 +324,6 @@ class App(tk.Tk):
         path = paths[0]
         program = simpledialog.askstring("Open", "Program:")
         if program:
-            history.add(path)
             subprocess.run(["spawn", program, path], cwd=dir)
 
     def paste_files(self, event=None):
@@ -472,7 +467,6 @@ def open_path(app, path):
         return
     for tab_id, data in app.data.items():
         if data["dir"] == path:
-            history.add(path)
             app.tab.select(tab_id)
             app.lift()
             app.focus_force()
