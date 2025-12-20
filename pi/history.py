@@ -6,6 +6,8 @@ MAX_SIZE = 1000
 
 def add(path):
     path = os.path.abspath(path)
+    if not os.path.isdir(path):
+        return
     history = get_all()
     if path in history:
         history.remove(path)
