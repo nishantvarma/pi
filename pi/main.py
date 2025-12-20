@@ -12,7 +12,6 @@ from pi import history, server
 from pi.config import config
 from pi.console import Console
 from pi.core import Folder
-from pi import help
 from pi.tab import Tab
 from pi.tray import Tray
 from pi.utils import quit, restart
@@ -464,7 +463,8 @@ class App(tk.Tk):
             subprocess.run(["open", path], cwd=os.path.dirname(path))
 
     def show_help(self, event=None):
-        help.toggle(self, self.bindings)
+        help_text = "\n".join(f"{key:12} {desc}" for key, desc, _ in self.bindings)
+        subprocess.run(["st", "-e", "sh", "-c", f"echo '{help_text}' | less"])
 
     def on_press(self, event):
         self.press_start_time = event.time
