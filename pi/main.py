@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 import tkinter as tk
 
 from pathlib import Path
@@ -31,7 +30,6 @@ class App(tk.Tk):
             ("/", "Search", self.search_file),
             ("`", "Dup tab", self.duplicate_tab),
             ("e", "Edit", self.edit_file),
-            ("b", "Buffer", self.search_buffer),
             ("h", "Help", self.show_help),
             ("l", "Link", self.create_links),
             ("n", "New file", self.create_file),
@@ -39,9 +37,10 @@ class App(tk.Tk):
             ("q", "Close/Quit", self.close_tab),
             ("Q", "Force quit", None),
             ("s", "Terminal", self.open_terminal),
-            ("x", "Fuzzy open", self.fuzzy_open),
-            ("z", "Fuzzy edit", self.fuzzy_edit),
-            ("Z", "Fuzzy home", self.fuzzy_home),
+            ("x", "Fuzzy open local", self.fuzzy_open_local),
+            ("X", "Fuzzy open global", self.fuzzy_open_global),
+            ("z", "Fuzzy edit local", self.fuzzy_edit_local),
+            ("Z", "Fuzzy edit global", self.fuzzy_edit_global),
             ("Del", "Delete", None),
             ("F2", "Rename", None),
             ("F5", "Refresh", None),
@@ -120,11 +119,11 @@ class App(tk.Tk):
         box.bind("q", self.close_tab)
         box.bind("Q", lambda e: sys.exit(0))
         box.bind("s", self.open_terminal)
-        box.bind("x", self.fuzzy_open)
-        box.bind("z", self.fuzzy_edit)
-        box.bind("b", self.search_buffer)
+        box.bind("x", self.fuzzy_open_local)
+        box.bind("X", self.fuzzy_open_global)
+        box.bind("z", self.fuzzy_edit_local)
+        box.bind("Z", self.fuzzy_edit_global)
         box.bind("h", self.show_help)
-        box.bind("Z", self.fuzzy_home)
         self.load_files(box, path)
         return tab
 
@@ -274,33 +273,19 @@ class App(tk.Tk):
         pattern = simpledialog.askstring("Filter", "Pattern:")
         self.load_files(box, dir, pattern=pattern)
 
-    def fuzzy_edit(self, event=None):
+    def fuzzy_open_local(self, event=None):
         tab, box, dir, paths = self.box_context()
-        subprocess.run(["spawn", "st", "fuzzyedit"], cwd=dir)
+        subprocess.run(["spawn", "st", "fuzzyopen", "."], cwd=dir)
 
-    def fuzzy_home(self, event=None):
-        home = os.path.expanduser("~")
-        fd, resultfile = tempfile.mkstemp()
-        os.close(fd)
-        subprocess.run([
-            "st", "-e", "sh", "-c",
-            f"find {home} -maxdepth 3 -type d 2>/dev/null | fzy > {resultfile}"
-        ])
-        try:
-            path = open(resultfile).read().strip()
-        finally:
-            os.unlink(resultfile)
-        if path and os.path.isdir(path):
-            for tab_id, data in self.data.items():
-                if data["dir"] == path:
-                    history.add(path)
-                    self.tab.select(tab_id)
-                    return
-            self.new_tab(path)
+    def fuzzy_open_global(self, event=None):
+        subprocess.run(["spawn", "st", "fuzzyopen", "-g"])
 
-    def fuzzy_open(self, event=None):
+    def fuzzy_edit_local(self, event=None):
         tab, box, dir, paths = self.box_context()
-        subprocess.run(["spawn", "st", "fuzzyopen"], cwd=dir)
+        subprocess.run(["spawn", "st", "fuzzyedit", "."], cwd=dir)
+
+    def fuzzy_edit_global(self, event=None):
+        subprocess.run(["spawn", "st", "fuzzyedit", "-g"])
 
     def make_executable(self, event=None):
         tab, box, dir, paths = self.box_context()
@@ -422,45 +407,6 @@ class App(tk.Tk):
                 box.see(i)
                 return True
         return False
-
-    def search_buffer(self, event=None):
-        active = [data["dir"] for data in self.data.values()]
-        items = active + [p for p in history.get_all() if p not in active]
-        if not items:
-            return
-        fd, histfile = tempfile.mkstemp()
-        os.write(fd, "\n".join(items).encode())
-        os.close(fd)
-        fd, resultfile = tempfile.mkstemp()
-        os.close(fd)
-        subprocess.run([
-            "st", "-e", "sh", "-c",
-            f"fzy < {histfile} > {resultfile}"
-        ])
-        try:
-            path = open(resultfile).read().strip()
-        finally:
-            os.unlink(histfile)
-            os.unlink(resultfile)
-        if not path:
-            return
-        for tab_id, data in self.data.items():
-            if data["dir"] == path:
-                self.tab.select(tab_id)
-                return
-            if os.path.dirname(path) == data["dir"]:
-                self.tab.select(tab_id)
-                self.select_file(data["box"], os.path.basename(path))
-                subprocess.run(["open", path], cwd=os.path.dirname(path))
-                return
-        if os.path.isdir(path):
-            self.new_tab(path)
-        elif os.path.exists(path):
-            parent = os.path.dirname(path)
-            self.new_tab(parent)
-            tab = self.tab.select()
-            self.select_file(self.data[tab]["box"], os.path.basename(path))
-            subprocess.run(["open", path], cwd=os.path.dirname(path))
 
     def show_help(self, event=None):
         help_text = "\n".join(f"{key:12} {desc}" for key, desc, _ in self.bindings)
