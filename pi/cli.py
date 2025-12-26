@@ -54,7 +54,9 @@ class FM:
         self.hidden = False
         self.marks = Path.home() / ".config/pi/marks"
         self.marks.mkdir(parents=True, exist_ok=True)
-        readline.set_completer(lambda t, s: (glob.glob(os.path.expanduser(t) + "*") + [None])[s])
+        readline.set_completer(
+            lambda t, s: (glob.glob(os.path.expanduser(t) + "*") + [None])[s]
+        )
         readline.set_completer_delims(" \t\n")
         readline.parse_and_bind("tab: complete")
 
