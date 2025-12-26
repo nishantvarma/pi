@@ -27,18 +27,18 @@ class FM:
         self.hidden = False
         self.marks = Path.home() / ".config/pi/marks"
         self.marks.mkdir(parents=True, exist_ok=True)
-        self._init_readline()
+        self.init_readline()
 
-    def _init_readline(self):
-        readline.set_completer(self._complete)
+    def init_readline(self):
+        readline.set_completer(self.complete)
         readline.set_completer_delims(" \t\n")
         readline.parse_and_bind("tab: complete")
 
-    def _complete(self, text, state):
+    def complete(self, text, state):
         matches = glob.glob(os.path.expanduser(text) + "*")
         return (matches + [None])[state]
 
-    def _style(self, p):
+    def style(self, p):
         if p.is_symlink():
             return "cyan", "@"
         if p.is_dir():
@@ -98,7 +98,7 @@ class FM:
         if 1 <= n <= len(self.files):
             p = self.files[n - 1]
             if p.is_dir():
-                self._cd(p)
+                self.cd(p)
             else:
                 subprocess.run(["open", str(p)])
 
@@ -108,7 +108,7 @@ class FM:
         else:
             p = self.cwd / name
         if p.is_dir():
-            self._cd(p.resolve())
+            self.cd(p.resolve())
             return True
         elif p.is_file():
             subprocess.run(["open", str(p)])
