@@ -2,7 +2,10 @@ import os
 import sys
 
 from contextlib import contextmanager
+from pathlib import Path
 from tkinter import messagebox
+
+STATE = Path.home() / ".config" / "pi" / "state"
 
 
 @contextmanager
@@ -24,3 +27,14 @@ def restart(event=None):
 def quit(event=None):
     if messagebox.askyesno("Quit", "Are you sure?"):
         sys.exit(0)
+
+
+def save_state(tabs):
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    STATE.write_text("\n".join(tabs))
+
+
+def load_state():
+    if STATE.exists():
+        return [p for p in STATE.read_text().split("\n") if p]
+    return []

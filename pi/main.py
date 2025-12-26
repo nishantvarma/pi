@@ -13,7 +13,7 @@ from pi.console import Console
 from pi.core import Folder
 from pi.tab import Tab
 from pi.tray import Tray
-from pi.utils import quit, restart
+from pi.utils import quit, restart, save_state, load_state
 
 
 class App(tk.Tk):
@@ -116,7 +116,7 @@ class App(tk.Tk):
         box.bind("n", self.create_file)
         box.bind("o", self.create_folder)
         box.bind("q", self.close_tab)
-        box.bind("Q", lambda e: sys.exit(0))
+        box.bind("Q", self.quit_app)
         box.bind("s", self.open_terminal)
         box.bind("x", self.fuzzy_open_local)
         box.bind("X", self.fuzzy_open_global)
@@ -156,9 +156,16 @@ class App(tk.Tk):
 
     def close_tab(self, event=None):
         if len(self.tab.tabs()) == 1:
-            quit()
+            self.quit_app()
         else:
             self.tab.close()
+
+    def get_tabs(self):
+        return [self.data[tab]["dir"] for tab in self.tab.tabs()]
+
+    def quit_app(self, event=None):
+        save_state(self.get_tabs())
+        quit()
 
     def create_console(self):
         if hasattr(self, "console"):
@@ -492,11 +499,17 @@ if __name__ == "__main__":
         sys.exit(0)
 
     a = App()
+    saved_tabs = [p for p in load_state() if os.path.isdir(p)]
+    if saved_tabs:
+        a.tab.forget(0)
+        a.data.clear()
+        for tab_path in saved_tabs:
+            a.new_tab(tab_path)
     server.start(lambda p: a.after(0, lambda: open_path(a, p)))
 
     style = ttk.Style()
     style.configure(".", font=config.app.font)
-    a.bind_all("<Control-q>", quit)
+    a.bind_all("<Control-q>", a.quit_app)
     a.bind_all("<Control-r>", restart)
     a.bind_all("<F11>", a.toggle_fullscreen)
     a.mainloop()
