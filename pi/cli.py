@@ -179,7 +179,7 @@ class FM:
             except (EOFError, KeyboardInterrupt):
                 break
             if not line:
-                self._cd(self.prev)
+                self.cd(self.prev)
                 self.ls()
                 continue
 
