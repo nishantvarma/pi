@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from pick import pick
 from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
@@ -149,6 +150,8 @@ class FM:
             "g": "mark",
             "s": "select",
             "ss": "unselect",
+            "a": "arrow",
+            "j": "jump",
             "q": "quit",
             "?": "help",
         }
@@ -169,6 +172,8 @@ class FM:
             "mark": lambda: self.go_mark(args),
             "select": lambda: self.select(args),
             "unselect": lambda: self.sel.clear(),
+            "arrow": lambda: self.arrow_select(),
+            "jump": lambda: self.jump(),
             "quit": lambda: sys.exit(0),
             "help": lambda: self.help(cmds),
         }
@@ -326,6 +331,26 @@ class FM:
         mark = self.marks / args[0]
         if mark.exists():
             self.cd(mark.resolve())
+
+    def arrow_select(self):
+        if not self.files:
+            return
+        names = [f.name for f in self.files]
+        selected = pick(names, multiselect=True, min_selection_count=0)
+        self.sel.clear()
+        for name, idx in selected:
+            self.sel.add(self.files[idx])
+
+    def jump(self):
+        if not self.files:
+            return
+        names = [f.name for f in self.files]
+        name, idx = pick(names)
+        p = self.files[idx]
+        if p.is_dir():
+            self.cd(p)
+        else:
+            subprocess.run(["open", str(p)])
 
     def help(self, cmds):
         items = [f"[bold]{k}[/bold]:{v}" for k, v in cmds.items()]
