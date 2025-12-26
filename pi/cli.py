@@ -8,7 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from pick import pick
 
 ESC = "\033["
 BLUE = ESC + "34m"
@@ -53,6 +52,7 @@ class FM:
         self.sel = set()
         self.cut = False
         self.hidden = False
+        self.cursor = 0
         self.marks = Path.home() / ".config/pi/marks"
         self.marks.mkdir(parents=True, exist_ok=True)
         readline.set_completer(lambda t, s: (glob.glob(os.path.expanduser(t) + "*") + [None])[s])
@@ -90,7 +90,8 @@ class FM:
         for i, f in enumerate(self.files[:h], 1):
             col, suf = style(f)
             mark = "* " if f in self.sel else "  "
-            print(f"{YELLOW}{i:3}{RESET} {mark}{col}{f.name}{suf}{RESET}")
+            ptr = "> " if i - 1 == self.cursor else "  "
+            print(f"{YELLOW}{i:3}{RESET} {ptr}{mark}{col}{f.name}{suf}{RESET}")
         if len(self.files) > h:
             print(f"    {DIM}+{len(self.files) - h} more{RESET}")
 
@@ -148,6 +149,9 @@ class FM:
             "g": self.go_mark,
             "s": self.select,
             "ss": lambda a: self.sel.clear(),
+            "j": lambda a: setattr(self, "cursor", min(self.cursor + 1, len(self.files) - 1)),
+            "k": lambda a: setattr(self, "cursor", max(self.cursor - 1, 0)),
+            " ": lambda a: self.toggle_sel(),
             "q": lambda a: sys.exit(0),
             "?": lambda a: self.help(cmds),
         }
@@ -160,7 +164,7 @@ class FM:
                 break
 
             if not line:
-                self.cd(self.prev)
+                self.go(self.cursor + 1)
             elif line.isdigit():
                 self.go(int(line))
             elif line.startswith("!"):
@@ -180,6 +184,7 @@ class FM:
         self.cwd = p
         os.chdir(p)
         self.sel.clear()
+        self.cursor = 0
 
     def edit(self, args):
         if not args:
@@ -198,15 +203,14 @@ class FM:
             else:
                 subprocess.run(["open", str(p)])
 
+    def toggle_sel(self):
+        if self.files:
+            f = self.files[self.cursor]
+            self.sel.discard(f) if f in self.sel else self.sel.add(f)
+
     def select(self, args):
         if not args:
-            if not self.files:
-                return
-            names = [f.name for f in self.files]
-            selected = pick(names, multiselect=True, min_selection_count=0)
-            self.sel.clear()
-            for name, idx in selected:
-                self.sel.add(self.files[idx])
+            self.toggle_sel()
             return
         for p in self.paths(args):
             if p in self.sel:
