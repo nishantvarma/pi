@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -18,37 +19,23 @@ con = Console()
 class FM:
     def __init__(self, path="."):
         self.cwd = Path(path).resolve()
+        self.prev = self.cwd
         self.files = []
         self.clip = []
         self.sel = set()
         self.cut = False
         self.hidden = False
-        self.hist = Path.home() / ".config/pi/history"
         self.marks = Path.home() / ".config/pi/marks"
         self.marks.mkdir(parents=True, exist_ok=True)
-        self.hist.parent.mkdir(parents=True, exist_ok=True)
         self._init_readline()
 
     def _init_readline(self):
-        try:
-            readline.read_history_file(self.hist)
-        except FileNotFoundError:
-            pass
         readline.set_completer(self._complete)
         readline.set_completer_delims(" \t\n")
         readline.parse_and_bind("tab: complete")
 
     def _complete(self, text, state):
-        line = readline.get_line_buffer()
-        if line.startswith("g "):
-            prefix = text[1:] if text.startswith(".") else text
-            marks = [m.name for m in self.marks.iterdir() if m.name.startswith(prefix)]
-            if text.startswith("."):
-                matches = ["." + m for m in marks]
-            else:
-                matches = marks
-        else:
-            matches = glob.glob(os.path.expanduser(text) + "*")
+        matches = glob.glob(os.path.expanduser(text) + "*")
         return (matches + [None])[state]
 
     def _style(self, p):
@@ -145,36 +132,45 @@ class FM:
         os.chdir(self.cwd)
         self.ls()
         cmds = {
-            "..": lambda a: self.go_up(),
-            "b": lambda a: self.go_up(),
-            "back": lambda a: self.go_up(),
-            "~": lambda a: self.go_home(),
-            "h": lambda a: self.toggle_hidden(),
-            "e": lambda a: self.edit(a),
-            "edit": lambda a: self.edit(a),
-            "o": lambda a: self.open(a),
-            "open": lambda a: self.open(a),
-            "c": lambda a: self.yank(a),
-            "cp": lambda a: self.yank(a),
-            "x": lambda a: self.yank(a, cut=True),
-            "v": lambda a: self.paste(),
-            "d": lambda a: self.delete(a),
-            "rm": lambda a: self.delete(a),
-            "r": lambda a: self.rename(a),
-            "mv": lambda a: self.rename(a),
-            "n": lambda a: self.touch(a),
-            "touch": lambda a: self.touch(a),
-            "m": lambda a: self.mkdir(a),
-            "mkdir": lambda a: self.mkdir(a),
-            "l": lambda a: self.ls(),
-            "ls": lambda a: self.ls(),
-            "f": lambda a: self.search(),
-            "g": lambda a: self.go_mark(a),
-            "s": lambda a: self.select(a),
-            "ss": lambda a: self.sel.clear(),
-            "q": lambda a: sys.exit(0),
-            "quit": lambda a: sys.exit(0),
-            "?": lambda a: self.help(cmds),
+            "..": "up",
+            "b": "up",
+            "~": "home",
+            "h": "hidden",
+            "e": "edit",
+            "o": "open",
+            "c": "copy",
+            "x": "cut",
+            "v": "paste",
+            "d": "delete",
+            "r": "rename",
+            "n": "touch",
+            "m": "mkdir",
+            "l": "list",
+            "g": "mark",
+            "s": "select",
+            "ss": "unselect",
+            "q": "quit",
+            "?": "help",
+        }
+        actions = {
+            "up": lambda: self.go_up(),
+            "home": lambda: self.go_home(),
+            "hidden": lambda: self.toggle_hidden(),
+            "edit": lambda: self.edit(args),
+            "open": lambda: self.open(args),
+            "copy": lambda: self.yank(args),
+            "cut": lambda: self.yank(args, cut=True),
+            "paste": lambda: self.paste(),
+            "delete": lambda: self.delete(args),
+            "rename": lambda: self.rename(args),
+            "touch": lambda: self.touch(args),
+            "mkdir": lambda: self.mkdir(args),
+            "list": lambda: self.ls(),
+            "mark": lambda: self.go_mark(args),
+            "select": lambda: self.select(args),
+            "unselect": lambda: self.sel.clear(),
+            "quit": lambda: sys.exit(0),
+            "help": lambda: self.help(cmds),
         }
         while True:
             self.draw()
@@ -183,6 +179,8 @@ class FM:
             except (EOFError, KeyboardInterrupt):
                 break
             if not line:
+                self._cd(self.prev)
+                self.ls()
                 continue
 
             if line.isdigit():
@@ -191,8 +189,8 @@ class FM:
                 continue
 
             if line.startswith("!"):
-                subprocess.run(line[1:], shell=True)
-                con.print("[dim]·[/dim]")
+                r = subprocess.run(line[1:], shell=True)
+                con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
                 input()
                 self.ls()
                 continue
@@ -201,7 +199,7 @@ class FM:
             cmd, args = parts[0], parts[1:]
 
             if cmd in cmds:
-                cmds[cmd](args)
+                actions[cmds[cmd]]()
                 self.ls()
                 continue
 
@@ -209,14 +207,14 @@ class FM:
                 self.ls()
                 continue
 
-            subprocess.run(line, shell=True)
-            con.print("[dim]·[/dim]")
+            r = subprocess.run(line, shell=True)
+            con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
             input()
             self.ls()
 
-        readline.write_history_file(self.hist)
-
     def _cd(self, p):
+        if p != self.cwd:
+            self.prev = self.cwd
         self.cwd = p
         os.chdir(p)
         self.sel.clear()
@@ -284,7 +282,6 @@ class FM:
     def delete(self, args):
         paths = self.nums(args) if args else list(self.sel)
         if not paths:
-            con.print("[dim]nothing to delete[/dim]")
             return
         self.sel.clear()
         names = " ".join(p.name for p in paths)
@@ -318,51 +315,21 @@ class FM:
 
     def go_mark(self, args):
         if not args:
-            marks = list(self.marks.iterdir())
-            if marks:
-                for m in sorted(marks):
-                    con.print(f"[bold]{m.name}[/bold] → {m.resolve()}")
-            else:
-                con.print("[dim]no marks[/dim]")
-            try:
-                choice = input("g ").strip()
-            except (EOFError, KeyboardInterrupt):
-                return
-            if choice:
-                self.go_mark(choice.split())
+            self._cd(self.marks)
             return
-        if args[0] == "." or args[0].startswith("."):
-            name = args[1] if args[0] == "." and len(args) > 1 else args[0][1:]
-            if not name:
-                name = self.cwd.name
-            self.set_mark([name])
-            con.print(f"[dim]marked {name}[/dim]")
+        if args[0].startswith("."):
+            name = args[0][1:] or self.cwd.name
+            mark = self.marks / name
+            mark.unlink(missing_ok=True)
+            mark.symlink_to(self.cwd)
             return
         mark = self.marks / args[0]
         if mark.exists():
             self._cd(mark.resolve())
 
-    def set_mark(self, args):
-        if not args:
-            return
-        mark = self.marks / args[0]
-        try:
-            mark.unlink(missing_ok=True)
-            mark.symlink_to(self.cwd)
-            return True
-        except Exception as e:
-            con.print(f"[red]{e}[/red]")
-            return False
-
-    def search(self):
-        result = subprocess.run(["search"], capture_output=True, text=True)
-        if result.returncode == 0 and result.stdout.strip():
-            con.print(f"[bold]{result.stdout.strip()}[/bold]")
-        con.print("[dim]·[/dim]")
-        input()
-
     def help(self, cmds):
-        con.print(" ".join(f"[bold]{k}[/bold]" for k in cmds if len(k) == 1))
+        items = [f"[bold]{k}[/bold]:{v}" for k, v in cmds.items()]
+        con.print(Columns(items, equal=True, expand=True))
         input()
 
 
