@@ -9,12 +9,39 @@ import sys
 from pathlib import Path
 
 from pick import pick
-from rich.columns import Columns
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
 
-con = Console()
+ESC = "\033["
+BLUE = ESC + "34m"
+GREEN = ESC + "32m"
+CYAN = ESC + "36m"
+YELLOW = ESC + "33m"
+DIM = ESC + "2m"
+BOLD = ESC + "1m"
+RED = ESC + "31m"
+RESET = ESC + "0m"
+
+
+def style(p):
+    if p.is_symlink():
+        return CYAN, "@"
+    if p.is_dir():
+        return BLUE, "/"
+    if os.access(p, os.X_OK):
+        return GREEN, "*"
+    return "", ""
+
+
+def tildify(p):
+    try:
+        return "~/" + str(p.relative_to(Path.home()))
+    except ValueError:
+        return str(p)
+
+
+def shell(cmd):
+    r = subprocess.run(cmd, shell=True, executable="rc")
+    print(f"{GREEN}·{RESET}" if r.returncode == 0 else f"{RED}·{RESET}")
+    input()
 
 
 class FM:
@@ -28,25 +55,9 @@ class FM:
         self.hidden = False
         self.marks = Path.home() / ".config/pi/marks"
         self.marks.mkdir(parents=True, exist_ok=True)
-        self.init_readline()
-
-    def init_readline(self):
-        readline.set_completer(self.complete)
+        readline.set_completer(lambda t, s: (glob.glob(os.path.expanduser(t) + "*") + [None])[s])
         readline.set_completer_delims(" \t\n")
         readline.parse_and_bind("tab: complete")
-
-    def complete(self, text, state):
-        matches = glob.glob(os.path.expanduser(text) + "*")
-        return (matches + [None])[state]
-
-    def style(self, p):
-        if p.is_symlink():
-            return "cyan", "@"
-        if p.is_dir():
-            return "blue", "/"
-        if os.access(p, os.X_OK):
-            return "green", "*"
-        return "white", ""
 
     def ls(self):
         try:
@@ -62,38 +73,26 @@ class FM:
             self.files = []
 
     def draw(self):
-        con.clear()
-        t = Table(show_header=False, box=None, padding=(0, 1))
-        t.add_column(style="yellow", width=3, justify="right")
-        t.add_column()
-
-        h = con.size.height - 5
-        for i, f in enumerate(self.files[:h], 1):
-            col, suf = self.style(f)
-            mark = "* " if f in self.sel else "  "
-            t.add_row(str(i), f"{mark}[{col}]{f.name}{suf}[/{col}]")
-        if len(self.files) > h:
-            t.add_row("", f"[dim]+{len(self.files) - h} more[/dim]")
-
-        try:
-            path = "~/" + str(self.cwd.relative_to(Path.home()))
-        except ValueError:
-            path = str(self.cwd)
-        title = f"[bold]{path}[/bold]"
+        print("\033[H\033[J", end=str())
+        title = f"{BOLD}{tildify(self.cwd)}{RESET}"
         if self.sel:
-            title += f" [dim]sel:{len(self.sel)}[/dim]"
+            title += f" {DIM}sel:{len(self.sel)}{RESET}"
         if self.clip:
             names = ", ".join(p.name for p in self.clip[:3])
             if len(self.clip) > 3:
                 names += f" +{len(self.clip) - 3}"
             mode = "cut" if self.cut else "copy"
-            title += f" [dim]({mode}: {names})[/dim]"
+            title += f" {DIM}({mode}: {names}){RESET}"
+        print(title)
+        print()
 
-        con.print(
-            Panel(
-                t, title=title, title_align="left", border_style="dim", padding=(0, 1)
-            )
-        )
+        h = shutil.get_terminal_size().lines - 4
+        for i, f in enumerate(self.files[:h], 1):
+            col, suf = style(f)
+            mark = "* " if f in self.sel else "  "
+            print(f"{YELLOW}{i:3}{RESET} {mark}{col}{f.name}{suf}{RESET}")
+        if len(self.files) > h:
+            print(f"    {DIM}+{len(self.files) - h} more{RESET}")
 
     def go(self, n):
         if 1 <= n <= len(self.files):
@@ -165,18 +164,14 @@ class FM:
             elif line.isdigit():
                 self.go(int(line))
             elif line.startswith("!"):
-                r = subprocess.run(line[1:], shell=True, executable="rc")
-                con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
-                input()
+                shell(line[1:])
             elif line.split()[0] in cmds:
                 parts = line.split()
                 cmds[parts[0]](parts[1:])
             elif self.go_name(line.split()[0]):
                 pass
             else:
-                r = subprocess.run(line, shell=True, executable="rc")
-                con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
-                input()
+                shell(line)
 
     def cd(self, p):
         if p != self.cwd:
@@ -234,7 +229,7 @@ class FM:
                 else:
                     shutil.copy2(src, dst)
             except Exception as e:
-                con.print(f"[red]{e}[/red]")
+                print(f"{RED}{e}{RESET}")
         if self.cut:
             self.clip = []
 
@@ -253,7 +248,7 @@ class FM:
                 else:
                     p.unlink()
             except Exception as e:
-                con.print(f"[red]{e}[/red]")
+                print(f"{RED}{e}{RESET}")
 
     def rename(self, args):
         if len(args) >= 2:
@@ -262,7 +257,7 @@ class FM:
                 try:
                     paths[0].rename(self.cwd / args[1])
                 except Exception as e:
-                    con.print(f"[red]{e}[/red]")
+                    print(f"{RED}{e}{RESET}")
 
     def touch(self, args):
         for name in args:
@@ -287,7 +282,7 @@ class FM:
             self.cd(mark.resolve())
 
     def help(self, cmds):
-        con.print(Columns([f"[bold]{k}[/bold]" for k in cmds], equal=True, expand=True))
+        print(" ".join(f"{BOLD}{k}{RESET}" for k in cmds))
         input()
 
 
