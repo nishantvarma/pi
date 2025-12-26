@@ -20,9 +20,12 @@ class FM:
         self.cwd = Path(path).resolve()
         self.files = []
         self.clip = []
+        self.sel = set()
         self.cut = False
         self.hidden = False
         self.hist = Path.home() / ".config/pi/history"
+        self.marks = Path.home() / ".config/pi/marks"
+        self.marks.mkdir(parents=True, exist_ok=True)
         self.hist.parent.mkdir(parents=True, exist_ok=True)
         self._init_readline()
 
@@ -31,11 +34,22 @@ class FM:
             readline.read_history_file(self.hist)
         except FileNotFoundError:
             pass
-        readline.set_completer(
-            lambda t, s: (glob.glob(os.path.expanduser(t) + "*") + [None])[s]
-        )
+        readline.set_completer(self._complete)
         readline.set_completer_delims(" \t\n")
         readline.parse_and_bind("tab: complete")
+
+    def _complete(self, text, state):
+        line = readline.get_line_buffer()
+        if line.startswith("g "):
+            prefix = text[1:] if text.startswith(".") else text
+            marks = [m.name for m in self.marks.iterdir() if m.name.startswith(prefix)]
+            if text.startswith("."):
+                matches = ["." + m for m in marks]
+            else:
+                matches = marks
+        else:
+            matches = glob.glob(os.path.expanduser(text) + "*")
+        return (matches + [None])[state]
 
     def _style(self, p):
         if p.is_symlink():
@@ -68,7 +82,8 @@ class FM:
         h = con.size.height - 5
         for i, f in enumerate(self.files[:h], 1):
             style, suf = self._style(f)
-            t.add_row(str(i), f"[{style}]{f.name}{suf}[/{style}]")
+            mark = "* " if f in self.sel else "  "
+            t.add_row(str(i), f"{mark}[{style}]{f.name}{suf}[/{style}]")
         if len(self.files) > h:
             t.add_row("", f"[dim]+{len(self.files) - h} more[/dim]")
 
@@ -77,6 +92,8 @@ class FM:
         except ValueError:
             path = str(self.cwd)
         title = f"[bold]{path}[/bold]"
+        if self.sel:
+            title += f" [dim]sel:{len(self.sel)}[/dim]"
         if self.clip:
             names = ", ".join(p.name for p in self.clip[:3])
             if len(self.clip) > 3:
@@ -152,6 +169,9 @@ class FM:
             "l": lambda a: self.ls(),
             "ls": lambda a: self.ls(),
             "f": lambda a: self.search(),
+            "g": lambda a: self.go_mark(a),
+            "s": lambda a: self.select(a),
+            "ss": lambda a: self.sel.clear(),
             "q": lambda a: sys.exit(0),
             "quit": lambda a: sys.exit(0),
             "?": lambda a: self.help(cmds),
@@ -199,6 +219,7 @@ class FM:
     def _cd(self, p):
         self.cwd = p
         os.chdir(p)
+        self.sel.clear()
 
     def go_up(self):
         if self.cwd.parent != self.cwd:
@@ -227,9 +248,23 @@ class FM:
             else:
                 subprocess.run(["open", str(p)])
 
+    def select(self, args):
+        if not args:
+            for p in self.sel:
+                con.print(f"[bold]{p.name}[/bold]")
+            if self.sel:
+                input()
+            return
+        for p in self.nums(args):
+            if p in self.sel:
+                self.sel.remove(p)
+            else:
+                self.sel.add(p)
+
     def yank(self, args, cut=False):
-        self.clip = self.nums(args)
+        self.clip = self.nums(args) if args else list(self.sel)
         self.cut = cut
+        self.sel.clear()
 
     def paste(self):
         for src in self.clip:
@@ -247,19 +282,22 @@ class FM:
             self.clip = []
 
     def delete(self, args):
-        paths = self.nums(args)
+        paths = self.nums(args) if args else list(self.sel)
         if not paths:
+            con.print("[dim]nothing to delete[/dim]")
             return
+        self.sel.clear()
         names = " ".join(p.name for p in paths)
-        if input(f"rm {names}? ").lower() == "y":
-            for p in paths:
-                try:
-                    if p.is_dir():
-                        shutil.rmtree(p)
-                    else:
-                        p.unlink()
-                except Exception as e:
-                    con.print(f"[red]{e}[/red]")
+        if input(f"rm {names}? ").lower() != "y":
+            return
+        for p in paths:
+            try:
+                if p.is_dir():
+                    shutil.rmtree(p)
+                else:
+                    p.unlink()
+            except Exception as e:
+                con.print(f"[red]{e}[/red]")
 
     def rename(self, args):
         if len(args) >= 2:
@@ -277,6 +315,44 @@ class FM:
     def mkdir(self, args):
         for name in args:
             (self.cwd / name).mkdir(exist_ok=True)
+
+    def go_mark(self, args):
+        if not args:
+            marks = list(self.marks.iterdir())
+            if marks:
+                for m in sorted(marks):
+                    con.print(f"[bold]{m.name}[/bold] → {m.resolve()}")
+            else:
+                con.print("[dim]no marks[/dim]")
+            try:
+                choice = input("g ").strip()
+            except (EOFError, KeyboardInterrupt):
+                return
+            if choice:
+                self.go_mark(choice.split())
+            return
+        if args[0] == "." or args[0].startswith("."):
+            name = args[1] if args[0] == "." and len(args) > 1 else args[0][1:]
+            if not name:
+                name = self.cwd.name
+            self.set_mark([name])
+            con.print(f"[dim]marked {name}[/dim]")
+            return
+        mark = self.marks / args[0]
+        if mark.exists():
+            self._cd(mark.resolve())
+
+    def set_mark(self, args):
+        if not args:
+            return
+        mark = self.marks / args[0]
+        try:
+            mark.unlink(missing_ok=True)
+            mark.symlink_to(self.cwd)
+            return True
+        except Exception as e:
+            con.print(f"[red]{e}[/red]")
+            return False
 
     def search(self):
         result = subprocess.run(["search"], capture_output=True, text=True)
