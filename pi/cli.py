@@ -140,7 +140,7 @@ class FM:
             "o": "open",
             "c": "copy",
             "x": "cut",
-            "v": "paste",
+            "p": "paste",
             "d": "delete",
             "r": "rename",
             "n": "touch",
@@ -189,7 +189,7 @@ class FM:
                 continue
 
             if line.startswith("!"):
-                r = subprocess.run(line[1:], shell=True)
+                r = subprocess.run(line[1:], shell=True, executable="rc")
                 con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
                 input()
                 self.ls()
@@ -207,7 +207,7 @@ class FM:
                 self.ls()
                 continue
 
-            r = subprocess.run(line, shell=True)
+            r = subprocess.run(line, shell=True, executable="rc")
             con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
             input()
             self.ls()
