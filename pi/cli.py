@@ -68,7 +68,7 @@ class FM:
 
         h = con.size.height - 5
         for i, f in enumerate(self.files[:h], 1):
-            style, suf = self._style(f)
+            style, suf = self.style(f)
             mark = "* " if f in self.sel else "  "
             t.add_row(str(i), f"{mark}[{style}]{f.name}{suf}[/{style}]")
         if len(self.files) > h:
@@ -212,7 +212,7 @@ class FM:
             input()
             self.ls()
 
-    def _cd(self, p):
+    def cd(self, p):
         if p != self.cwd:
             self.prev = self.cwd
         self.cwd = p
@@ -221,10 +221,10 @@ class FM:
 
     def go_up(self):
         if self.cwd.parent != self.cwd:
-            self._cd(self.cwd.parent)
+            self.cd(self.cwd.parent)
 
     def go_home(self):
-        self._cd(Path.home())
+        self.cd(Path.home())
 
     def toggle_hidden(self):
         self.hidden = not self.hidden
@@ -242,7 +242,7 @@ class FM:
             return
         for p in self.nums(args):
             if p.is_dir():
-                self._cd(p)
+                self.cd(p)
             else:
                 subprocess.run(["open", str(p)])
 
@@ -315,7 +315,7 @@ class FM:
 
     def go_mark(self, args):
         if not args:
-            self._cd(self.marks)
+            self.cd(self.marks)
             return
         if args[0].startswith("."):
             name = args[0][1:] or self.cwd.name
@@ -325,7 +325,7 @@ class FM:
             return
         mark = self.marks / args[0]
         if mark.exists():
-            self._cd(mark.resolve())
+            self.cd(mark.resolve())
 
     def help(self, cmds):
         items = [f"[bold]{k}[/bold]:{v}" for k, v in cmds.items()]
