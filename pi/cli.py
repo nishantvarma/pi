@@ -174,6 +174,7 @@ class FM:
                 shell(line)
 
     def cd(self, p):
+        p = p.resolve()
         if p != self.cwd:
             self.prev = self.cwd
         self.cwd = p
