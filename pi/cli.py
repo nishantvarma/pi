@@ -69,9 +69,9 @@ class FM:
 
         h = con.size.height - 5
         for i, f in enumerate(self.files[:h], 1):
-            style, suf = self.style(f)
+            col, suf = self.style(f)
             mark = "* " if f in self.sel else "  "
-            t.add_row(str(i), f"{mark}[{style}]{f.name}{suf}[/{style}]")
+            t.add_row(str(i), f"{mark}[{col}]{f.name}{suf}[/{col}]")
         if len(self.files) > h:
             t.add_row("", f"[dim]+{len(self.files) - h} more[/dim]")
 
@@ -116,7 +116,7 @@ class FM:
             return True
         return False
 
-    def nums(self, args):
+    def paths(self, args):
         out = []
         for a in args:
             try:
@@ -131,91 +131,52 @@ class FM:
 
     def run(self):
         os.chdir(self.cwd)
-        self.ls()
         cmds = {
-            "..": "up",
-            "b": "up",
-            "~": "home",
-            "h": "hidden",
-            "e": "edit",
-            "o": "open",
-            "c": "copy",
-            "x": "cut",
-            "p": "paste",
-            "d": "delete",
-            "r": "rename",
-            "n": "touch",
-            "m": "mkdir",
-            "l": "list",
-            "g": "mark",
-            "s": "select",
-            "ss": "unselect",
-            "a": "arrow",
-            "j": "jump",
-            "q": "quit",
-            "?": "help",
-        }
-        actions = {
-            "up": lambda: self.go_up(),
-            "home": lambda: self.go_home(),
-            "hidden": lambda: self.toggle_hidden(),
-            "edit": lambda: self.edit(args),
-            "open": lambda: self.open(args),
-            "copy": lambda: self.yank(args),
-            "cut": lambda: self.yank(args, cut=True),
-            "paste": lambda: self.paste(),
-            "delete": lambda: self.delete(args),
-            "rename": lambda: self.rename(args),
-            "touch": lambda: self.touch(args),
-            "mkdir": lambda: self.mkdir(args),
-            "list": lambda: self.ls(),
-            "mark": lambda: self.go_mark(args),
-            "select": lambda: self.select(args),
-            "unselect": lambda: self.sel.clear(),
-            "arrow": lambda: self.arrow_select(),
-            "jump": lambda: self.jump(),
-            "quit": lambda: sys.exit(0),
-            "help": lambda: self.help(cmds),
+            "..": lambda a: self.cd(self.cwd.parent),
+            "b": lambda a: self.cd(self.cwd.parent),
+            "~": lambda a: self.cd(Path.home()),
+            "h": lambda a: setattr(self, "hidden", not self.hidden),
+            "e": self.edit,
+            "o": self.open,
+            "c": self.yank,
+            "x": lambda a: self.yank(a, cut=True),
+            "p": lambda a: self.paste(),
+            "d": self.delete,
+            "r": self.rename,
+            "n": self.touch,
+            "m": self.mkdir,
+            "l": lambda a: None,
+            "g": self.go_mark,
+            "s": self.select,
+            "ss": lambda a: self.sel.clear(),
+            "q": lambda a: sys.exit(0),
+            "?": lambda a: self.help(cmds),
         }
         while True:
+            self.ls()
             self.draw()
             try:
                 line = input("; ").strip()
             except (EOFError, KeyboardInterrupt):
                 break
+
             if not line:
                 self.cd(self.prev)
-                self.ls()
-                continue
-
-            if line.isdigit():
+            elif line.isdigit():
                 self.go(int(line))
-                self.ls()
-                continue
-
-            if line.startswith("!"):
+            elif line.startswith("!"):
                 r = subprocess.run(line[1:], shell=True, executable="rc")
                 con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
                 input()
-                self.ls()
-                continue
-
-            parts = line.split()
-            cmd, args = parts[0], parts[1:]
-
-            if cmd in cmds:
-                actions[cmds[cmd]]()
-                self.ls()
-                continue
-
-            if self.go_name(cmd):
-                self.ls()
-                continue
-
-            r = subprocess.run(line, shell=True, executable="rc")
-            con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
-            input()
-            self.ls()
+            elif line.split()[0] in cmds:
+                parts = line.split()
+                cmds[parts[0]](parts[1:])
+            elif self.go_name(line.split()[0]):
+                pass
+            else:
+                r = subprocess.run(line, shell=True, executable="rc")
+                con.print("[green]·[/green]" if r.returncode == 0 else "[red]·[/red]")
+                input()
 
     def cd(self, p):
         if p != self.cwd:
@@ -224,28 +185,18 @@ class FM:
         os.chdir(p)
         self.sel.clear()
 
-    def go_up(self):
-        if self.cwd.parent != self.cwd:
-            self.cd(self.cwd.parent)
-
-    def go_home(self):
-        self.cd(Path.home())
-
-    def toggle_hidden(self):
-        self.hidden = not self.hidden
-
     def edit(self, args):
         if not args:
             subprocess.run(["fuzzyedit"])
             return
-        for p in self.nums(args):
+        for p in self.paths(args):
             subprocess.run(["edit", str(p)])
 
     def open(self, args):
         if not args:
             subprocess.run(["fuzzyopen"])
             return
-        for p in self.nums(args):
+        for p in self.paths(args):
             if p.is_dir():
                 self.cd(p)
             else:
@@ -253,19 +204,22 @@ class FM:
 
     def select(self, args):
         if not args:
-            for p in self.sel:
-                con.print(f"[bold]{p.name}[/bold]")
-            if self.sel:
-                input()
+            if not self.files:
+                return
+            names = [f.name for f in self.files]
+            selected = pick(names, multiselect=True, min_selection_count=0)
+            self.sel.clear()
+            for name, idx in selected:
+                self.sel.add(self.files[idx])
             return
-        for p in self.nums(args):
+        for p in self.paths(args):
             if p in self.sel:
                 self.sel.remove(p)
             else:
                 self.sel.add(p)
 
     def yank(self, args, cut=False):
-        self.clip = self.nums(args) if args else list(self.sel)
+        self.clip = self.paths(args) if args else list(self.sel)
         self.cut = cut
         self.sel.clear()
 
@@ -285,7 +239,7 @@ class FM:
             self.clip = []
 
     def delete(self, args):
-        paths = self.nums(args) if args else list(self.sel)
+        paths = self.paths(args) if args else list(self.sel)
         if not paths:
             return
         self.sel.clear()
@@ -303,7 +257,7 @@ class FM:
 
     def rename(self, args):
         if len(args) >= 2:
-            paths = self.nums([args[0]])
+            paths = self.paths([args[0]])
             if paths:
                 try:
                     paths[0].rename(self.cwd / args[1])
@@ -332,29 +286,8 @@ class FM:
         if mark.exists():
             self.cd(mark.resolve())
 
-    def arrow_select(self):
-        if not self.files:
-            return
-        names = [f.name for f in self.files]
-        selected = pick(names, multiselect=True, min_selection_count=0)
-        self.sel.clear()
-        for name, idx in selected:
-            self.sel.add(self.files[idx])
-
-    def jump(self):
-        if not self.files:
-            return
-        names = [f.name for f in self.files]
-        name, idx = pick(names)
-        p = self.files[idx]
-        if p.is_dir():
-            self.cd(p)
-        else:
-            subprocess.run(["open", str(p)])
-
     def help(self, cmds):
-        items = [f"[bold]{k}[/bold]:{v}" for k, v in cmds.items()]
-        con.print(Columns(items, equal=True, expand=True))
+        con.print(Columns([f"[bold]{k}[/bold]" for k in cmds], equal=True, expand=True))
         input()
 
 
