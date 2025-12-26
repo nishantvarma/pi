@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "-f" ]]; then
+    shift
+    ruff format "$@"
+    ruff check --fix --select I,F,E,W "$@"
+else
+    ruff format --diff "$@"
+    ruff check --select I,F,E,W "$@"
+fi
