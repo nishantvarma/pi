@@ -23,9 +23,13 @@ class FM:
         self.t = Terminal()
         self.cwd = Path(path).resolve()
         self.files, self.clip, self.sel = [], [], set()
-        self.cutting, self.hidden, self.cur = False, False, 0
+        self.cutting, self.hidden, self.idx = False, False, 0
         self.marks = Path.home() / MARKS
         self.marks.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def cur(self):
+        return self.files[self.idx] if self.files else None
 
     def run(self):
         os.chdir(self.cwd)
@@ -42,16 +46,16 @@ class FM:
             "h": ("Help", self.help),
             "l": ("Link", self.link),
             "m": ("Mark", self.mark),
-            "n": ("New file", self.touch),
-            "N": ("New dir", self.mkdir),
-            "o": ("Fuzzy open", self.fzopen),
+            "n": ("New file", lambda: self.create("touch", Path.touch)),
+            "N": ("New dir", lambda: self.create("mkdir", Path.mkdir)),
+            "o": ("Fuzzy open", lambda: self.spawn(FUZZYOPEN)),
             "p": ("Paste", self.paste),
             "q": ("Quit", self.quit),
             "r": ("Rename", self.rename),
             "s": ("Shell", self.sh),
             "v": ("VC", self.vc),
             "x": ("Cut", self.cut),
-            "z": ("Fuzzy edit", self.fzedit),
+            "z": ("Fuzzy edit", lambda: self.spawn(FUZZYEDIT)),
             "~": ("Home", lambda: self.cd(Path.home())),
             "j": (None, lambda: self.mv(1)),
             "k": (None, lambda: self.mv(-1)),
@@ -91,7 +95,7 @@ class FM:
             )
         except PermissionError:
             self.files = []
-        self.cur = min(self.cur, max(0, len(self.files) - 1))
+        self.idx = min(self.idx, max(0, len(self.files) - 1))
 
     def draw(self):
         t = self.t
@@ -120,11 +124,11 @@ class FM:
     def scroll(self, h):
         if len(self.files) <= h:
             return 0
-        return max(0, min(self.cur - h // 2, len(self.files) - h))
+        return max(0, min(self.idx - h // 2, len(self.files) - h))
 
     def highlight(self, idx, f):
         t = self.t
-        if idx == self.cur:
+        if idx == self.idx:
             return t.on_gray20
         if f in self.sel:
             return t.on_gray30
@@ -132,11 +136,11 @@ class FM:
 
     def mv(self, d):
         if self.files:
-            self.cur = max(0, min(len(self.files) - 1, self.cur + d))
+            self.idx = max(0, min(len(self.files) - 1, self.idx + d))
 
     def toggle(self):
-        if self.files:
-            self.sel.symmetric_difference_update({self.files[self.cur]})
+        if self.cur:
+            self.sel.symmetric_difference_update({self.cur})
 
     def jump(self, first):
         t = self.t
@@ -160,19 +164,19 @@ class FM:
         if buf.isdigit():
             n = int(buf) - 1
             if 0 <= n < len(self.files):
-                self.cur = n
+                self.idx = n
 
     def enter(self):
-        if not self.files:
+        if not self.cur:
             return
-        p = self.files[self.cur]
+        p = self.cur
         if p.is_dir():
             self.cd(p)
         else:
             self.spawn(OPEN, str(p))
 
     def cd(self, p):
-        self.cwd, self.cur = p.resolve(), 0
+        self.cwd, self.idx = p.resolve(), 0
         os.chdir(self.cwd)
         self.sel.clear()
 
@@ -226,32 +230,20 @@ class FM:
         (self.marks / name).symlink_to(self.cwd)
 
     def edit(self):
-        if self.files and self.files[self.cur].is_file():
-            self.spawn(EDIT, str(self.files[self.cur]))
+        if self.cur and self.cur.is_file():
+            self.spawn(EDIT, str(self.cur))
 
-    def fzedit(self):
-        self.spawn(FUZZYEDIT)
-
-    def fzopen(self):
-        self.spawn(FUZZYOPEN)
-
-    def mkdir(self):
-        name = self.prompt("mkdir: ")
+    def create(self, label, fn):
+        name = self.prompt(f"{label}: ")
         if name:
-            (self.cwd / name).mkdir(exist_ok=True)
-
-    def touch(self):
-        name = self.prompt("touch: ")
-        if name:
-            (self.cwd / name).touch()
+            fn(self.cwd / name)
 
     def rename(self):
-        if not self.files:
+        if not self.cur:
             return
-        p = self.files[self.cur]
-        name = self.prompt(f"mv {p.name}: ")
+        name = self.prompt(f"mv {self.cur.name}: ")
         if name:
-            p.rename(self.cwd / name)
+            self.cur.rename(self.cwd / name)
 
     def sh(self):
         subprocess.Popen([TERM, "-e", SHELL])
@@ -275,9 +267,8 @@ class FM:
         t.inkey()
 
     def chmod(self):
-        if self.files:
-            p = self.files[self.cur]
-            p.chmod(p.stat().st_mode ^ 0o111)
+        if self.cur:
+            self.cur.chmod(self.cur.stat().st_mode ^ 0o111)
 
     def search(self):
         pat = self.prompt("/")
@@ -286,7 +277,7 @@ class FM:
         pat = pat.lower()
         for i, f in enumerate(self.files):
             if pat in f.name.lower():
-                self.cur = i
+                self.idx = i
                 return
 
     def link(self):
@@ -299,7 +290,7 @@ class FM:
 
     def spawn(self, *cmd):
         t = self.t
-        self.out(t.exit_fullscreen + t.normal_cursor)
+        self.out(t.exit_fullscreen + t.clear + t.normal_cursor)
         os.system("stty sane")
         ret = subprocess.run(cmd)
         if ret.returncode:
@@ -310,8 +301,8 @@ class FM:
     def targets(self):
         if self.sel:
             return list(self.sel)
-        if self.files:
-            return [self.files[self.cur]]
+        if self.cur:
+            return [self.cur]
         return []
 
     def tilde(self, p):
