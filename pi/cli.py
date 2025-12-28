@@ -324,9 +324,8 @@ class FM:
         fmt, suf = self.style(f)
         bg = self.highlight(i, f)
         num = self.yellow(f"{i + 1:2}")
-        txt = f.name + suf
-        name = fmt(txt) if fmt else txt
-        return f" {num}  {bg}{name}{self.t.normal}"
+        name = fmt(f.name + suf)
+        return f" {num}  {bg}{name}"
 
     def scroll(self, h):
         if len(self.files) <= h:
@@ -350,7 +349,7 @@ class FM:
             return self.blue, "/"
         if os.access(p, os.X_OK):
             return self.green, "*"
-        return None, str()
+        return self.plain, str()
 
     def targets(self):
         if self.sel:
@@ -391,6 +390,9 @@ class FM:
 
     def green(self, s):
         return self.t.green + s + self.t.normal
+
+    def plain(self, s):
+        return s + self.t.normal
 
 
 if __name__ == "__main__":
