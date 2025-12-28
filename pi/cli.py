@@ -25,6 +25,7 @@ class FM:
         self.cwd = Path(path).resolve()
         self.files, self.clip, self.sel = [], [], set()
         self.cutting, self.hidden, self.idx = False, False, 0
+        self.pat = str()
         self.marks = Path.home() / MARKS
         self.marks.mkdir(parents=True, exist_ok=True)
 
@@ -43,8 +44,10 @@ class FM:
             "h": ("Help", self.help),
             "l": ("Link", self.link),
             "m": ("Mark", self.mark),
-            "n": ("New file", lambda: self.create("touch", Path.touch)),
-            "N": ("New dir", lambda: self.create("mkdir", Path.mkdir)),
+            "n": ("Next", self.next),
+            "N": ("Prev", self.prev),
+            "a": ("Add file", lambda: self.create("touch", Path.touch)),
+            "A": ("Add dir", lambda: self.create("mkdir", Path.mkdir)),
             "o": ("Fuzzy open", lambda: self.spawn(FUZZYOPEN)),
             "p": ("Paste", self.paste),
             "q": ("Quit", self.quit),
@@ -235,10 +238,25 @@ class FM:
         pat = self.prompt("/")
         if not pat:
             return
-        pat = pat.lower()
-        for i, f in enumerate(self.files):
-            if pat in f.name.lower():
-                self.idx = i
+        self.pat = pat.lower()
+        self.next()
+
+    def next(self):
+        if not self.pat or not self.files:
+            return
+        for i in range(1, len(self.files) + 1):
+            idx = (self.idx + i) % len(self.files)
+            if self.pat in self.files[idx].name.lower():
+                self.idx = idx
+                return
+
+    def prev(self):
+        if not self.pat or not self.files:
+            return
+        for i in range(1, len(self.files) + 1):
+            idx = (self.idx - i) % len(self.files)
+            if self.pat in self.files[idx].name.lower():
+                self.idx = idx
                 return
 
     def sh(self):
