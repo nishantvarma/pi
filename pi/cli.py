@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
 from blessed import Terminal
 
 EDIT = "edit"
@@ -61,19 +62,22 @@ class FM:
             "KEY_ENTER": (None, self.enter),
             "\n": (None, self.enter),
         }
-        with t.fullscreen(), t.cbreak(), t.hidden_cursor():
-            while True:
-                self.ls()
-                self.draw()
-                key = t.inkey(timeout=1)
-                if not key:
-                    continue
-                k = key.name or str(key)
-                if k in self.keys:
-                    if self.keys[k][1]() == "quit":
-                        break
-                elif key.isdigit():
-                    self.jump(key)
+        try:
+            with t.fullscreen(), t.cbreak(), t.hidden_cursor():
+                while True:
+                    self.ls()
+                    self.draw()
+                    key = t.inkey(timeout=1)
+                    if not key:
+                        continue
+                    k = key.name or str(key)
+                    if k in self.keys:
+                        if self.keys[k][1]() == "quit":
+                            break
+                    elif key.isdigit():
+                        self.jump(key)
+        except KeyboardInterrupt:
+            self.quit()
 
     def ls(self):
         try:
@@ -256,7 +260,8 @@ class FM:
         self.spawn(VC)
 
     def quit(self):
-        self.out(self.t.normal_cursor + self.t.clear)
+        t = self.t
+        self.out(t.exit_fullscreen + t.normal_cursor + t.clear)
         return "quit"
 
     def help(self):
@@ -295,6 +300,7 @@ class FM:
     def spawn(self, *cmd):
         t = self.t
         self.out(t.exit_fullscreen + t.normal_cursor)
+        os.system("stty sane")
         subprocess.run(cmd)
         self.out(t.enter_fullscreen + t.civis)
 
