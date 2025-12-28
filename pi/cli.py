@@ -17,7 +17,6 @@ TERM = "st"
 
 
 class FM:
-    # lifecycle
     def __init__(self, path="."):
         self.t = Terminal()
         self.cwd = Path(path).resolve()
@@ -74,11 +73,14 @@ class FM:
                 elif key.isdigit():
                     self.jump(key)
 
-    # core
     def ls(self):
         try:
             self.files = sorted(
-                [f for f in self.cwd.iterdir() if self.hidden or not f.name.startswith(".")],
+                [
+                    f
+                    for f in self.cwd.iterdir()
+                    if self.hidden or not f.name.startswith(".")
+                ],
                 key=lambda p: (not p.is_dir(), p.name.lower()),
             )
         except PermissionError:
@@ -92,7 +94,11 @@ class FM:
         if self.sel:
             title += t.dim + f" [{len(self.sel)}]" + t.normal
         if self.clip:
-            title += t.dim + f" {'cut' if self.cutting else 'cp'}:{len(self.clip)}" + t.normal
+            title += (
+                t.dim
+                + f" {'cut' if self.cutting else 'cp'}:{len(self.clip)}"
+                + t.normal
+            )
         print(title)
         h = t.height - 2
         off = self.scroll(h)
@@ -118,7 +124,6 @@ class FM:
             return t.on_gray30
         return ""
 
-    # public
     def mv(self, d):
         if self.files:
             self.cur = max(0, min(len(self.files) - 1, self.cur + d))
@@ -129,7 +134,9 @@ class FM:
 
     def jump(self, first):
         t = self.t
-        print(t.move_y(t.height - 1) + t.clear_eol + t.cnorm + first, end="", flush=True)
+        print(
+            t.move_y(t.height - 1) + t.clear_eol + t.cnorm + first, end="", flush=True
+        )
         buf = first
         while True:
             key = t.inkey(timeout=1)
@@ -277,7 +284,6 @@ class FM:
             if not dst.exists():
                 dst.symlink_to(src)
 
-    # internals
     def spawn(self, *cmd):
         with self.t.fullscreen():
             subprocess.run(cmd)
