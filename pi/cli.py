@@ -14,6 +14,7 @@ MARKS = ".config/pi/marks"
 OPEN = "open"
 SHELL = "rc"
 TERM = "st"
+VC = "v"
 
 
 class FM:
@@ -44,9 +45,10 @@ class FM:
             "N": ("New dir", self.mkdir),
             "o": ("Fuzzy open", self.fzopen),
             "p": ("Paste", self.paste),
-            "q": ("Quit", lambda: "quit"),
+            "q": ("Quit", self.quit),
             "r": ("Rename", self.rename),
             "s": ("Shell", self.sh),
+            "v": ("VC", self.vc),
             "x": ("Cut", self.cut),
             "z": ("Fuzzy edit", self.fzedit),
             "~": ("Home", lambda: self.cd(Path.home())),
@@ -250,6 +252,13 @@ class FM:
 
     def sh(self):
         subprocess.Popen([TERM, "-e", SHELL])
+
+    def vc(self):
+        self.spawn(VC)
+
+    def quit(self):
+        print(self.t.normal_cursor + self.t.clear, end="", flush=True)
+        return "quit"
 
     def help(self):
         t = self.t
