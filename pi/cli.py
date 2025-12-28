@@ -23,6 +23,7 @@ class FM:
     def __init__(self, path="."):
         self.t = Terminal()
         self.cwd = Path(path).resolve()
+        self.last = None
         self.files, self.clip, self.sel = [], [], set()
         self.cutting, self.hidden, self.idx = False, False, 0
         self.pat = str()
@@ -57,6 +58,7 @@ class FM:
             "x": ("Cut", self.cut),
             "z": ("Fuzzy edit", lambda: self.spawn(FUZZYEDIT)),
             "~": ("Home", lambda: self.cd(Path.home())),
+            "-": ("Back", lambda: self.cd(self.last) if self.last else None),
             "j": (None, lambda: self.mv(1)),
             "k": (None, lambda: self.mv(-1)),
             "KEY_DOWN": (None, lambda: self.mv(1)),
@@ -117,6 +119,7 @@ class FM:
 
     # public
     def cd(self, p):
+        self.last = self.cwd
         self.cwd, self.idx = p.resolve(), 0
         os.chdir(self.cwd)
         self.sel.clear()
