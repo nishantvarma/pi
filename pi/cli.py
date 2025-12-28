@@ -321,11 +321,12 @@ class FM:
                 self.out(key)
 
     def row(self, i, f):
-        col, suf = self.style(f)
+        fmt, suf = self.style(f)
         bg = self.highlight(i, f)
         num = self.yellow(f"{i + 1:2}")
-        name = f"{col}{f.name}{suf}{self.t.normal}"
-        return f" {num}  {bg}{name}"
+        txt = f.name + suf
+        name = fmt(txt) if fmt else txt
+        return f" {num}  {bg}{name}{self.t.normal}"
 
     def scroll(self, h):
         if len(self.files) <= h:
@@ -343,14 +344,13 @@ class FM:
         self.out(t.enter_fullscreen + t.clear + t.civis)
 
     def style(self, p):
-        t = self.t
         if p.is_symlink():
-            return t.cyan, "@"
+            return self.cyan, "@"
         if p.is_dir():
-            return t.blue, "/"
+            return self.blue, "/"
         if os.access(p, os.X_OK):
-            return t.green, "*"
-        return str(), str()
+            return self.green, "*"
+        return None, str()
 
     def targets(self):
         if self.sel:
@@ -382,6 +382,15 @@ class FM:
 
     def yellow(self, s):
         return self.t.yellow + s + self.t.normal
+
+    def cyan(self, s):
+        return self.t.cyan + s + self.t.normal
+
+    def blue(self, s):
+        return self.t.blue + s + self.t.normal
+
+    def green(self, s):
+        return self.t.green + s + self.t.normal
 
 
 if __name__ == "__main__":
