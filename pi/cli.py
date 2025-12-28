@@ -42,13 +42,13 @@ class FM:
             "m": ("Mark", self.mark),
             "n": ("New file", self.touch),
             "N": ("New dir", self.mkdir),
-            "o": ("Fuzzy open", self.fopen),
+            "o": ("Fuzzy open", self.fzopen),
             "p": ("Paste", self.paste),
             "q": ("Quit", lambda: "quit"),
             "r": ("Rename", self.rename),
             "s": ("Shell", self.sh),
             "x": ("Cut", self.snip),
-            "z": ("Fuzzy edit", self.fedit),
+            "z": ("Fuzzy edit", self.fzedit),
             "~": ("Home", lambda: self.cd(Path.home())),
             "j": (None, lambda: self.mv(1)),
             "k": (None, lambda: self.mv(-1)),
@@ -224,11 +224,11 @@ class FM:
             with self.t.fullscreen():
                 subprocess.run([EDIT, str(self.files[self.cur])])
 
-    def fedit(self):
+    def fzedit(self):
         with self.t.fullscreen():
             subprocess.run([FUZZYEDIT])
 
-    def fopen(self):
+    def fzopen(self):
         with self.t.fullscreen():
             subprocess.run([FUZZYOPEN])
 
