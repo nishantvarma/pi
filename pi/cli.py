@@ -102,19 +102,23 @@ class FM:
 
     def draw(self):
         t = self.t
-        self.out(t.home + t.clear)
+        self.out(t.home)
         title = self.bold(self.tilde(self.cwd))
         if self.sel:
             title += self.dim(f" [{len(self.sel)}]")
         if self.clip:
             title += self.dim(f" {'cut' if self.cutting else 'cp'}:{len(self.clip)}")
-        print(title)
+        print(title + t.clear_eol)
         h = t.height - 2
         off = self.scroll(h)
         for i, f in enumerate(self.files[off : off + h], off):
-            print(self.row(i, f))
+            print(self.row(i, f) + t.clear_eol)
+        extra = h - len(self.files[off : off + h])
         if len(self.files) > h:
-            print(self.dim(f" +{len(self.files) - h}"))
+            print(self.dim(f" +{len(self.files) - h}") + t.clear_eol)
+            extra -= 1
+        for _ in range(extra):
+            print(t.clear_eol)
         self.out(t.move_y(t.height - 1) + t.clear_eol)
 
     # public
