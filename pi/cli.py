@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import os
+import readline
 import shutil
 import subprocess
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 from blessed import Terminal
@@ -41,6 +43,7 @@ class FM:
             "c": ("Copy", self.copy),
             "d": ("Delete", self.rm),
             "e": ("Edit", self.edit),
+            "E": ("Goto", self.goto),
             "g": ("Marks", lambda: self.cd(self.marks)),
             "h": ("Help", self.help),
             "l": ("Link", self.link),
@@ -149,6 +152,25 @@ class FM:
             self.cd(self.cur)
         else:
             self.spawn(OPEN, str(self.cur))
+
+    def goto(self):
+        with self.tty():
+            readline.parse_and_bind("tab: complete")
+            try:
+                path = input("goto: ")
+            except (EOFError, KeyboardInterrupt):
+                return
+        if path:
+            p = Path(path).expanduser().resolve()
+            if p.is_dir():
+                self.cd(p)
+            elif p.is_file():
+                self.cd(p.parent)
+                self.ls()
+                for i, f in enumerate(self.files):
+                    if f.name == p.name:
+                        self.idx = i
+                        break
 
     def help(self):
         t = self.t
@@ -336,15 +358,22 @@ class FM:
             return 0
         return max(0, min(self.idx - h // 2, len(self.files) - h))
 
-    def spawn(self, *cmd):
+    @contextmanager
+    def tty(self):
         t = self.t
         self.out(t.exit_fullscreen + t.clear + t.normal_cursor)
         os.system("stty sane")
-        ret = subprocess.run(cmd)
-        if ret.returncode:
-            os.system("pause")
-        os.system("stty -echo -icanon")
-        self.out(t.enter_fullscreen + t.clear + t.civis)
+        try:
+            yield
+        finally:
+            os.system("stty -echo -icanon")
+            self.out(t.enter_fullscreen + t.clear + t.civis)
+
+    def spawn(self, *cmd):
+        with self.tty():
+            ret = subprocess.run(cmd)
+            if ret.returncode:
+                os.system("pause")
 
     def style(self, p):
         if p.is_symlink():
