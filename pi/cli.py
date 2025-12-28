@@ -91,7 +91,7 @@ class FM:
 
     def draw(self):
         t = self.t
-        print(t.home + t.clear, end="")
+        self.out(t.home + t.clear)
         title = t.bold + self.tilde(self.cwd) + t.normal
         if self.sel:
             title += t.dim + f" [{len(self.sel)}]" + t.normal
@@ -111,7 +111,7 @@ class FM:
             print(f" {t.yellow}{idx + 1:2}{t.normal}  {bg}{col}{f.name}{suf}{t.normal}")
         if len(self.files) > h:
             print(t.dim + f" +{len(self.files) - h}" + t.normal)
-        print(t.move_y(t.height - 1) + t.clear_eol, end="", flush=True)
+        self.out(t.move_y(t.height - 1) + t.clear_eol)
 
     def scroll(self, h):
         if len(self.files) <= h:
@@ -124,7 +124,7 @@ class FM:
             return t.on_gray20
         if f in self.sel:
             return t.on_gray30
-        return ""
+        return str()
 
     def mv(self, d):
         if self.files:
@@ -136,25 +136,23 @@ class FM:
 
     def jump(self, first):
         t = self.t
-        print(
-            t.move_y(t.height - 1) + t.clear_eol + t.cnorm + first, end="", flush=True
-        )
+        self.out(t.move_y(t.height - 1) + t.clear_eol + t.cnorm + first)
         buf = first
         while True:
             key = t.inkey(timeout=1)
             if not key:
                 break
             if self.isesc(key):
-                print(t.civis, end="", flush=True)
+                self.out(t.civis)
                 return
             if self.isenter(key):
                 break
             if key.isdigit():
                 buf += key
-                print(key, end="", flush=True)
+                self.out(key)
             else:
                 break
-        print(t.civis, end="", flush=True)
+        self.out(t.civis)
         if buf.isdigit():
             n = int(buf) - 1
             if 0 <= n < len(self.files):
@@ -175,13 +173,14 @@ class FM:
         self.sel.clear()
 
     def copy(self):
-        self.clip = self.targets()
-        self.cutting = False
-        self.sel.clear()
+        self.yank(False)
 
     def cut(self):
+        self.yank(True)
+
+    def yank(self, cut):
         self.clip = self.targets()
-        self.cutting = True
+        self.cutting = cut
         self.sel.clear()
 
     def paste(self):
@@ -257,12 +256,12 @@ class FM:
         self.spawn(VC)
 
     def quit(self):
-        print(self.t.normal_cursor + self.t.clear, end="", flush=True)
+        self.out(self.t.normal_cursor + self.t.clear)
         return "quit"
 
     def help(self):
         t = self.t
-        print(t.home + t.clear, end="")
+        self.out(t.home + t.clear)
         print(t.bold + "Shortcuts" + t.normal + "\n")
         for k, (desc, _) in self.keys.items():
             if desc:
@@ -294,8 +293,10 @@ class FM:
                 dst.symlink_to(src)
 
     def spawn(self, *cmd):
-        with self.t.fullscreen():
-            subprocess.run(cmd)
+        t = self.t
+        self.out(t.exit_fullscreen + t.normal_cursor)
+        subprocess.run(cmd)
+        self.out(t.enter_fullscreen + t.civis)
 
     def targets(self):
         if self.sel:
@@ -318,27 +319,27 @@ class FM:
             return t.blue, "/"
         if os.access(p, os.X_OK):
             return t.green, "*"
-        return "", ""
+        return str(), str()
 
     def prompt(self, msg):
         t = self.t
-        print(t.move_y(t.height - 1) + t.clear_eol + t.cnorm + msg, end="", flush=True)
-        buf = ""
+        self.out(t.move_y(t.height - 1) + t.clear_eol + t.cnorm + msg)
+        buf = str()
         while True:
             key = t.inkey()
             if self.isesc(key):
-                print(t.civis, end="", flush=True)
+                self.out(t.civis)
                 return None
             if self.isenter(key):
-                print(t.civis, end="", flush=True)
+                self.out(t.civis)
                 return buf
             if self.isbs(key):
                 if buf:
                     buf = buf[:-1]
-                    print(t.move_left + " " + t.move_left, end="", flush=True)
+                    self.out(t.move_left + " " + t.move_left)
             elif key.isprintable():
                 buf += key
-                print(key, end="", flush=True)
+                self.out(key)
 
     def isesc(self, key):
         return key.name == "KEY_ESCAPE"
@@ -348,6 +349,9 @@ class FM:
 
     def isbs(self, key):
         return key.name == "KEY_BACKSPACE" or key == chr(127)
+
+    def out(self, *args):
+        print(*args, end=str(), flush=True)
 
 
 if __name__ == "__main__":
