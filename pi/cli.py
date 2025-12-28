@@ -9,9 +9,11 @@ from blessed import Terminal
 
 EDIT = "edit"
 FUZZYEDIT = "fuzzyedit"
+FUZZYOPEN = "fuzzyopen"
 MARKS = ".config/pi/marks"
 OPEN = "open"
 SHELL = "rc"
+TERM = "st"
 
 
 class FM:
@@ -26,32 +28,36 @@ class FM:
     def run(self):
         os.chdir(self.cwd)
         t = self.t
-        keys = {
-            "q": lambda: "quit",
-            "j": lambda: self.mv(1),
-            "k": lambda: self.mv(-1),
-            "KEY_DOWN": lambda: self.mv(1),
-            "KEY_UP": lambda: self.mv(-1),
-            "l": self.enter,
-            "KEY_RIGHT": self.enter,
-            "KEY_ENTER": self.enter,
-            "\n": self.enter,
-            "h": lambda: self.cd(self.cwd.parent),
-            "KEY_LEFT": lambda: self.cd(self.cwd.parent),
-            "~": lambda: self.cd(Path.home()),
-            "g": lambda: self.cd(self.marks),
-            " ": self.toggle,
-            ".": lambda: setattr(self, "hidden", not self.hidden),
-            "c": self.copy,
-            "x": self.snip,
-            "p": self.paste,
-            "d": self.rm,
-            "m": self.mark,
-            "e": self.edit,
-            "n": self.touch,
-            "N": self.mkdir,
-            "r": self.rename,
-            "s": self.sh,
+        self.keys = {
+            " ": ("Select", self.toggle),
+            "*": ("Chmod +x", self.chmod),
+            ".": ("Hidden", lambda: setattr(self, "hidden", not self.hidden)),
+            "/": ("Search", self.search),
+            "c": ("Copy", self.copy),
+            "d": ("Delete", self.rm),
+            "e": ("Edit", self.edit),
+            "g": ("Marks", lambda: self.cd(self.marks)),
+            "h": ("Help", self.help),
+            "l": ("Link", self.link),
+            "m": ("Mark", self.mark),
+            "n": ("New file", self.touch),
+            "N": ("New dir", self.mkdir),
+            "o": ("Fuzzy open", self.fopen),
+            "p": ("Paste", self.paste),
+            "q": ("Quit", lambda: "quit"),
+            "r": ("Rename", self.rename),
+            "s": ("Shell", self.sh),
+            "x": ("Cut", self.snip),
+            "z": ("Fuzzy edit", self.fedit),
+            "~": ("Home", lambda: self.cd(Path.home())),
+            "j": (None, lambda: self.mv(1)),
+            "k": (None, lambda: self.mv(-1)),
+            "KEY_DOWN": (None, lambda: self.mv(1)),
+            "KEY_UP": (None, lambda: self.mv(-1)),
+            "KEY_RIGHT": (None, self.enter),
+            "KEY_LEFT": (None, lambda: self.cd(self.cwd.parent)),
+            "KEY_ENTER": (None, self.enter),
+            "\n": (None, self.enter),
         }
         with t.fullscreen(), t.cbreak(), t.hidden_cursor():
             while True:
@@ -61,8 +67,8 @@ class FM:
                 if not key:
                     continue
                 k = key.name or str(key)
-                if k in keys:
-                    if keys[k]() == "quit":
+                if k in self.keys:
+                    if self.keys[k][1]() == "quit":
                         break
                 elif key.isdigit():
                     self.jump(key)
@@ -217,9 +223,14 @@ class FM:
         if self.files and self.files[self.cur].is_file():
             with self.t.fullscreen():
                 subprocess.run([EDIT, str(self.files[self.cur])])
-        else:
-            with self.t.fullscreen():
-                subprocess.run([FUZZYEDIT])
+
+    def fedit(self):
+        with self.t.fullscreen():
+            subprocess.run([FUZZYEDIT])
+
+    def fopen(self):
+        with self.t.fullscreen():
+            subprocess.run([FUZZYOPEN])
 
     def mkdir(self):
         name = self.prompt("mkdir: ")
@@ -240,7 +251,40 @@ class FM:
             p.rename(self.cwd / name)
 
     def sh(self):
-        subprocess.Popen(["st", "-e", SHELL])
+        subprocess.Popen([TERM, "-e", SHELL])
+
+    def help(self):
+        t = self.t
+        print(t.home + t.clear, end="")
+        print(t.bold + "Shortcuts" + t.normal + "\n")
+        for k, (desc, _) in self.keys.items():
+            if desc:
+                print(f"  {t.yellow}{k:8}{t.normal} {desc}")
+        print(f"\n  {t.dim}Press any key{t.normal}")
+        t.inkey()
+
+    def chmod(self):
+        if self.files:
+            p = self.files[self.cur]
+            p.chmod(p.stat().st_mode ^ 0o111)
+
+    def search(self):
+        pat = self.prompt("/")
+        if not pat:
+            return
+        pat = pat.lower()
+        for i, f in enumerate(self.files):
+            if pat in f.name.lower():
+                self.cur = i
+                return
+
+    def link(self):
+        if not self.clip:
+            return
+        for src in self.clip:
+            dst = self.cwd / src.name
+            if not dst.exists():
+                dst.symlink_to(src)
 
     def targets(self):
         if self.sel:
