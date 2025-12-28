@@ -13,7 +13,7 @@ FUZZYEDIT = "fzedit"
 FUZZYOPEN = "fzopen"
 MARKS = ".config/pi/marks"
 OPEN = "open"
-SHELL = ["rlwrap", "rc"]
+SHELL = ["rlwrap", "-c", "rc"]
 TERM = "st"
 VC = "v"
 
