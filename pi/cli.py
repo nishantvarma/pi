@@ -19,6 +19,7 @@ VC = "v"
 
 
 class FM:
+    # lifecycle
     def __init__(self, path="."):
         self.t = Terminal()
         self.cwd = Path(path).resolve()
@@ -26,10 +27,6 @@ class FM:
         self.cutting, self.hidden, self.idx = False, False, 0
         self.marks = Path.home() / MARKS
         self.marks.mkdir(parents=True, exist_ok=True)
-
-    @property
-    def cur(self):
-        return self.files[self.idx] if self.files else None
 
     def run(self):
         os.chdir(self.cwd)
@@ -83,6 +80,7 @@ class FM:
         except KeyboardInterrupt:
             self.quit()
 
+    # core
     def ls(self):
         try:
             self.files = sorted(
@@ -100,47 +98,57 @@ class FM:
     def draw(self):
         t = self.t
         self.out(t.home + t.clear)
-        title = t.bold + self.tilde(self.cwd) + t.normal
+        title = self.bold(self.tilde(self.cwd))
         if self.sel:
-            title += t.dim + f" [{len(self.sel)}]" + t.normal
+            title += self.dim(f" [{len(self.sel)}]")
         if self.clip:
-            title += (
-                t.dim
-                + f" {'cut' if self.cutting else 'cp'}:{len(self.clip)}"
-                + t.normal
-            )
+            title += self.dim(f" {'cut' if self.cutting else 'cp'}:{len(self.clip)}")
         print(title)
         h = t.height - 2
         off = self.scroll(h)
-        for i, f in enumerate(self.files[off : off + h]):
-            idx = off + i
-            col, suf = self.style(f)
-            bg = self.highlight(idx, f)
-            print(f" {t.yellow}{idx + 1:2}{t.normal}  {bg}{col}{f.name}{suf}{t.normal}")
+        for i, f in enumerate(self.files[off : off + h], off):
+            print(self.row(i, f))
         if len(self.files) > h:
-            print(t.dim + f" +{len(self.files) - h}" + t.normal)
+            print(self.dim(f" +{len(self.files) - h}"))
         self.out(t.move_y(t.height - 1) + t.clear_eol)
 
-    def scroll(self, h):
-        if len(self.files) <= h:
-            return 0
-        return max(0, min(self.idx - h // 2, len(self.files) - h))
+    # public
+    def cd(self, p):
+        self.cwd, self.idx = p.resolve(), 0
+        os.chdir(self.cwd)
+        self.sel.clear()
 
-    def highlight(self, idx, f):
-        t = self.t
-        if idx == self.idx:
-            return t.on_gray20
-        if f in self.sel:
-            return t.on_gray30
-        return str()
-
-    def mv(self, d):
-        if self.files:
-            self.idx = max(0, min(len(self.files) - 1, self.idx + d))
-
-    def toggle(self):
+    def chmod(self):
         if self.cur:
-            self.sel.symmetric_difference_update({self.cur})
+            self.cur.chmod(self.cur.stat().st_mode ^ 0o111)
+
+    def copy(self):
+        self.yank(False)
+
+    def cut(self):
+        self.yank(True)
+
+    def edit(self):
+        if self.cur and self.cur.is_file():
+            self.spawn(EDIT, str(self.cur))
+
+    def enter(self):
+        if not self.cur:
+            return
+        if self.cur.is_dir():
+            self.cd(self.cur)
+        else:
+            self.spawn(OPEN, str(self.cur))
+
+    def help(self):
+        t = self.t
+        self.out(t.home + t.clear)
+        print(self.bold("Shortcuts") + "\n")
+        for k, (desc, _) in self.keys.items():
+            if desc:
+                print(f"  {self.yellow(f'{k:8}')} {desc}")
+        print(self.dim("\n  Press any key"))
+        t.inkey()
 
     def jump(self, first):
         t = self.t
@@ -166,30 +174,26 @@ class FM:
             if 0 <= n < len(self.files):
                 self.idx = n
 
-    def enter(self):
-        if not self.cur:
+    def link(self):
+        if not self.clip:
             return
-        p = self.cur
-        if p.is_dir():
-            self.cd(p)
-        else:
-            self.spawn(OPEN, str(p))
+        for src in self.clip:
+            dst = self.cwd / src.name
+            if not dst.exists():
+                dst.symlink_to(src)
 
-    def cd(self, p):
-        self.cwd, self.idx = p.resolve(), 0
-        os.chdir(self.cwd)
-        self.sel.clear()
+    def mark(self):
+        default = self.cwd.name
+        name = self.prompt(f"mark [{default}]: ")
+        if name is None:
+            return
+        name = name or default
+        (self.marks / name).unlink(missing_ok=True)
+        (self.marks / name).symlink_to(self.cwd)
 
-    def copy(self):
-        self.yank(False)
-
-    def cut(self):
-        self.yank(True)
-
-    def yank(self, cut):
-        self.clip = self.targets()
-        self.cutting = cut
-        self.sel.clear()
+    def mv(self, d):
+        if self.files:
+            self.idx = max(0, min(len(self.files) - 1, self.idx + d))
 
     def paste(self):
         for src in self.clip:
@@ -206,6 +210,13 @@ class FM:
         if self.cutting:
             self.clip = []
 
+    def rename(self):
+        if not self.cur:
+            return
+        name = self.prompt(f"mv {self.cur.name}: ")
+        if name:
+            self.cur.rename(self.cwd / name)
+
     def rm(self):
         paths = self.targets()
         if not paths:
@@ -220,56 +231,6 @@ class FM:
                 pass
         self.sel.clear()
 
-    def mark(self):
-        default = self.cwd.name
-        name = self.prompt(f"mark [{default}]: ")
-        if name is None:
-            return
-        name = name or default
-        (self.marks / name).unlink(missing_ok=True)
-        (self.marks / name).symlink_to(self.cwd)
-
-    def edit(self):
-        if self.cur and self.cur.is_file():
-            self.spawn(EDIT, str(self.cur))
-
-    def create(self, label, fn):
-        name = self.prompt(f"{label}: ")
-        if name:
-            fn(self.cwd / name)
-
-    def rename(self):
-        if not self.cur:
-            return
-        name = self.prompt(f"mv {self.cur.name}: ")
-        if name:
-            self.cur.rename(self.cwd / name)
-
-    def sh(self):
-        subprocess.Popen([TERM, "-e", SHELL])
-
-    def vc(self):
-        self.spawn(VC)
-
-    def quit(self):
-        t = self.t
-        self.out(t.exit_fullscreen + t.normal_cursor + t.clear)
-        return "quit"
-
-    def help(self):
-        t = self.t
-        self.out(t.home + t.clear)
-        print(t.bold + "Shortcuts" + t.normal + "\n")
-        for k, (desc, _) in self.keys.items():
-            if desc:
-                print(f"  {t.yellow}{k:8}{t.normal} {desc}")
-        print(f"\n  {t.dim}Press any key{t.normal}")
-        t.inkey()
-
-    def chmod(self):
-        if self.cur:
-            self.cur.chmod(self.cur.stat().st_mode ^ 0o111)
-
     def search(self):
         pat = self.prompt("/")
         if not pat:
@@ -280,46 +241,46 @@ class FM:
                 self.idx = i
                 return
 
-    def link(self):
-        if not self.clip:
-            return
-        for src in self.clip:
-            dst = self.cwd / src.name
-            if not dst.exists():
-                dst.symlink_to(src)
+    def sh(self):
+        subprocess.Popen([TERM, "-e", SHELL])
 
-    def spawn(self, *cmd):
-        t = self.t
-        self.out(t.exit_fullscreen + t.clear + t.normal_cursor)
-        os.system("stty sane")
-        ret = subprocess.run(cmd)
-        if ret.returncode:
-            os.system("pause")
-        os.system("stty -echo -icanon")
-        self.out(t.enter_fullscreen + t.clear + t.civis)
-
-    def targets(self):
-        if self.sel:
-            return list(self.sel)
+    def toggle(self):
         if self.cur:
-            return [self.cur]
-        return []
+            self.sel.symmetric_difference_update({self.cur})
 
-    def tilde(self, p):
-        try:
-            return "~/" + str(p.relative_to(Path.home()))
-        except ValueError:
-            return str(p)
-
-    def style(self, p):
+    def quit(self):
         t = self.t
-        if p.is_symlink():
-            return t.cyan, "@"
-        if p.is_dir():
-            return t.blue, "/"
-        if os.access(p, os.X_OK):
-            return t.green, "*"
-        return str(), str()
+        self.out(t.exit_fullscreen + t.normal_cursor + t.clear)
+        return "quit"
+
+    def vc(self):
+        self.spawn(VC)
+
+    # internals
+    @property
+    def cur(self):
+        return self.files[self.idx] if self.files else None
+
+    def create(self, label, fn):
+        name = self.prompt(f"{label}: ")
+        if name:
+            fn(self.cwd / name)
+
+    def highlight(self, idx, f):
+        if idx == self.idx:
+            return self.t.on_gray20
+        if f in self.sel:
+            return self.t.on_gray30
+        return str()
+
+    def isesc(self, key):
+        return key.name == "KEY_ESCAPE"
+
+    def isenter(self, key):
+        return key.name == "KEY_ENTER" or key == "\n"
+
+    def isbs(self, key):
+        return key.name == "KEY_BACKSPACE" or key == chr(127)
 
     def prompt(self, msg):
         t = self.t
@@ -341,17 +302,68 @@ class FM:
                 buf += key
                 self.out(key)
 
-    def isesc(self, key):
-        return key.name == "KEY_ESCAPE"
+    def row(self, i, f):
+        col, suf = self.style(f)
+        bg = self.highlight(i, f)
+        num = self.yellow(f"{i + 1:2}")
+        name = f"{col}{f.name}{suf}{self.t.normal}"
+        return f" {num}  {bg}{name}"
 
-    def isenter(self, key):
-        return key.name == "KEY_ENTER" or key == "\n"
+    def scroll(self, h):
+        if len(self.files) <= h:
+            return 0
+        return max(0, min(self.idx - h // 2, len(self.files) - h))
 
-    def isbs(self, key):
-        return key.name == "KEY_BACKSPACE" or key == chr(127)
+    def spawn(self, *cmd):
+        t = self.t
+        self.out(t.exit_fullscreen + t.clear + t.normal_cursor)
+        os.system("stty sane")
+        ret = subprocess.run(cmd)
+        if ret.returncode:
+            os.system("pause")
+        os.system("stty -echo -icanon")
+        self.out(t.enter_fullscreen + t.clear + t.civis)
 
+    def style(self, p):
+        t = self.t
+        if p.is_symlink():
+            return t.cyan, "@"
+        if p.is_dir():
+            return t.blue, "/"
+        if os.access(p, os.X_OK):
+            return t.green, "*"
+        return str(), str()
+
+    def targets(self):
+        if self.sel:
+            return list(self.sel)
+        if self.cur:
+            return [self.cur]
+        return []
+
+    def tilde(self, p):
+        try:
+            return "~/" + str(p.relative_to(Path.home()))
+        except ValueError:
+            return str(p)
+
+    def yank(self, cut):
+        self.clip = self.targets()
+        self.cutting = cut
+        self.sel.clear()
+
+    # formatting
     def out(self, *args):
         print(*args, end=str(), flush=True)
+
+    def bold(self, s):
+        return self.t.bold + s + self.t.normal
+
+    def dim(self, s):
+        return self.t.dim + s + self.t.normal
+
+    def yellow(self, s):
+        return self.t.yellow + s + self.t.normal
 
 
 if __name__ == "__main__":
