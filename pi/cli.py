@@ -17,11 +17,12 @@ TERM = "st"
 
 
 class FM:
+    # lifecycle
     def __init__(self, path="."):
         self.t = Terminal()
         self.cwd = Path(path).resolve()
         self.files, self.clip, self.sel = [], [], set()
-        self.cut, self.hidden, self.cur = False, False, 0
+        self.cutting, self.hidden, self.cur = False, False, 0
         self.marks = Path.home() / MARKS
         self.marks.mkdir(parents=True, exist_ok=True)
 
@@ -47,7 +48,7 @@ class FM:
             "q": ("Quit", lambda: "quit"),
             "r": ("Rename", self.rename),
             "s": ("Shell", self.sh),
-            "x": ("Cut", self.snip),
+            "x": ("Cut", self.cut),
             "z": ("Fuzzy edit", self.fzedit),
             "~": ("Home", lambda: self.cd(Path.home())),
             "j": (None, lambda: self.mv(1)),
@@ -73,14 +74,11 @@ class FM:
                 elif key.isdigit():
                     self.jump(key)
 
+    # core
     def ls(self):
         try:
             self.files = sorted(
-                [
-                    f
-                    for f in self.cwd.iterdir()
-                    if self.hidden or not f.name.startswith(".")
-                ],
+                [f for f in self.cwd.iterdir() if self.hidden or not f.name.startswith(".")],
                 key=lambda p: (not p.is_dir(), p.name.lower()),
             )
         except PermissionError:
@@ -94,9 +92,7 @@ class FM:
         if self.sel:
             title += t.dim + f" [{len(self.sel)}]" + t.normal
         if self.clip:
-            title += (
-                t.dim + f" {'cut' if self.cut else 'cp'}:{len(self.clip)}" + t.normal
-            )
+            title += t.dim + f" {'cut' if self.cutting else 'cp'}:{len(self.clip)}" + t.normal
         print(title)
         h = t.height - 2
         off = self.scroll(h)
@@ -122,6 +118,7 @@ class FM:
             return t.on_gray30
         return ""
 
+    # public
     def mv(self, d):
         if self.files:
             self.cur = max(0, min(len(self.files) - 1, self.cur + d))
@@ -132,18 +129,16 @@ class FM:
 
     def jump(self, first):
         t = self.t
-        print(
-            t.move_y(t.height - 1) + t.clear_eol + t.cnorm + first, end="", flush=True
-        )
+        print(t.move_y(t.height - 1) + t.clear_eol + t.cnorm + first, end="", flush=True)
         buf = first
         while True:
             key = t.inkey(timeout=1)
             if not key:
                 break
-            if self.is_esc(key):
+            if self.isesc(key):
                 print(t.civis, end="", flush=True)
                 return
-            if self.is_enter(key):
+            if self.isenter(key):
                 break
             if key.isdigit():
                 buf += key
@@ -163,8 +158,7 @@ class FM:
         if p.is_dir():
             self.cd(p)
         else:
-            with self.t.fullscreen():
-                subprocess.run([OPEN, str(p)])
+            self.spawn(OPEN, str(p))
 
     def cd(self, p):
         self.cwd, self.cur = p.resolve(), 0
@@ -173,19 +167,19 @@ class FM:
 
     def copy(self):
         self.clip = self.targets()
-        self.cut = False
+        self.cutting = False
         self.sel.clear()
 
-    def snip(self):
+    def cut(self):
         self.clip = self.targets()
-        self.cut = True
+        self.cutting = True
         self.sel.clear()
 
     def paste(self):
         for src in self.clip:
             dst = self.cwd / src.name
             try:
-                if self.cut:
+                if self.cutting:
                     shutil.move(src, dst)
                 elif src.is_dir():
                     shutil.copytree(src, dst)
@@ -193,7 +187,7 @@ class FM:
                     shutil.copy2(src, dst)
             except (OSError, shutil.Error):
                 pass
-        if self.cut:
+        if self.cutting:
             self.clip = []
 
     def rm(self):
@@ -221,16 +215,13 @@ class FM:
 
     def edit(self):
         if self.files and self.files[self.cur].is_file():
-            with self.t.fullscreen():
-                subprocess.run([EDIT, str(self.files[self.cur])])
+            self.spawn(EDIT, str(self.files[self.cur]))
 
     def fzedit(self):
-        with self.t.fullscreen():
-            subprocess.run([FUZZYEDIT])
+        self.spawn(FUZZYEDIT)
 
     def fzopen(self):
-        with self.t.fullscreen():
-            subprocess.run([FUZZYOPEN])
+        self.spawn(FUZZYOPEN)
 
     def mkdir(self):
         name = self.prompt("mkdir: ")
@@ -286,6 +277,11 @@ class FM:
             if not dst.exists():
                 dst.symlink_to(src)
 
+    # internals
+    def spawn(self, *cmd):
+        with self.t.fullscreen():
+            subprocess.run(cmd)
+
     def targets(self):
         if self.sel:
             return list(self.sel)
@@ -315,13 +311,13 @@ class FM:
         buf = ""
         while True:
             key = t.inkey()
-            if self.is_esc(key):
+            if self.isesc(key):
                 print(t.civis, end="", flush=True)
                 return None
-            if self.is_enter(key):
+            if self.isenter(key):
                 print(t.civis, end="", flush=True)
                 return buf
-            if self.is_bs(key):
+            if self.isbs(key):
                 if buf:
                     buf = buf[:-1]
                     print(t.move_left + " " + t.move_left, end="", flush=True)
@@ -329,13 +325,13 @@ class FM:
                 buf += key
                 print(key, end="", flush=True)
 
-    def is_esc(self, key):
+    def isesc(self, key):
         return key.name == "KEY_ESCAPE"
 
-    def is_enter(self, key):
+    def isenter(self, key):
         return key.name == "KEY_ENTER" or key == "\n"
 
-    def is_bs(self, key):
+    def isbs(self, key):
         return key.name == "KEY_BACKSPACE" or key == chr(127)
 
 
