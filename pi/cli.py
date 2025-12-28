@@ -242,22 +242,10 @@ class FM:
         self.next()
 
     def next(self):
-        if not self.pat or not self.files:
-            return
-        for i in range(1, len(self.files) + 1):
-            idx = (self.idx + i) % len(self.files)
-            if self.pat in self.files[idx].name.lower():
-                self.idx = idx
-                return
+        self.find(1)
 
     def prev(self):
-        if not self.pat or not self.files:
-            return
-        for i in range(1, len(self.files) + 1):
-            idx = (self.idx - i) % len(self.files)
-            if self.pat in self.files[idx].name.lower():
-                self.idx = idx
-                return
+        self.find(-1)
 
     def sh(self):
         subprocess.Popen([TERM, "-e", *SHELL])
@@ -278,6 +266,15 @@ class FM:
     @property
     def cur(self):
         return self.files[self.idx] if self.files else None
+
+    def find(self, d):
+        if not self.pat or not self.files:
+            return
+        for i in range(1, len(self.files) + 1):
+            idx = (self.idx + d * i) % len(self.files)
+            if self.pat in self.files[idx].name.lower():
+                self.idx = idx
+                return
 
     def create(self, label, fn):
         name = self.prompt(f"{label}: ")
@@ -369,7 +366,6 @@ class FM:
         self.cutting = cut
         self.sel.clear()
 
-    # formatting
     def out(self, *args):
         print(*args, end=str(), flush=True)
 
