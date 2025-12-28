@@ -9,11 +9,11 @@ from pathlib import Path
 from blessed import Terminal
 
 EDIT = "edit"
-FUZZYEDIT = "fuzzyedit"
-FUZZYOPEN = "fuzzyopen"
+FUZZYEDIT = "fzedit"
+FUZZYOPEN = "fzopen"
 MARKS = ".config/pi/marks"
 OPEN = "open"
-SHELL = "rc"
+SHELL = ["rlwrap", "rc"]
 TERM = "st"
 VC = "v"
 
@@ -260,7 +260,7 @@ class FM:
                 return
 
     def sh(self):
-        subprocess.Popen([TERM, "-e", SHELL])
+        subprocess.Popen([TERM, "-e", *SHELL])
 
     def toggle(self):
         if self.cur:
