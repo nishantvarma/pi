@@ -302,6 +302,7 @@ class FM:
         self.out(t.exit_fullscreen + t.normal_cursor)
         os.system("stty sane")
         subprocess.run(cmd)
+        os.system("stty -echo -icanon")
         self.out(t.enter_fullscreen + t.civis)
 
     def targets(self):
