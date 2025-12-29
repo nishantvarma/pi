@@ -101,7 +101,7 @@ class FM:
             )
         except PermissionError:
             self.files = []
-        self.idx = min(self.idx, max(0, len(self.files) - 1))
+        self.idx = max(0, min(len(self.files) - 1, self.idx))
 
     def draw(self):
         t = self.t
@@ -110,19 +110,22 @@ class FM:
         if self.sel:
             title += self.dim(f" [{len(self.sel)}]")
         if self.clip:
-            title += self.dim(f" {'cut' if self.cutting else 'cp'}:{len(self.clip)}")
+            mode = "cut" if self.cutting else "cp"
+            title += self.dim(f" {mode}:{len(self.clip)}")
         print(title + t.clear_eol)
         h = t.height - 2
         off = self.scroll(h)
-        for i, f in enumerate(self.files[off : off + h], off):
+        visible = self.files[off : off + h]
+        for i, f in enumerate(visible, off):
             print(self.row(i, f) + t.clear_eol)
-        extra = h - len(self.files[off : off + h])
+        extra = h - len(visible)
         if len(self.files) > h:
-            print(self.dim(f" +{len(self.files) - h}") + t.clear_eol)
+            hidden = len(self.files) - h
+            print(self.dim(f" +{hidden}") + t.clear_eol)
             extra -= 1
         for _ in range(extra):
             print(t.clear_eol)
-        self.out(t.move_y(t.height - 1) + t.clear_eol)
+        self.status()
 
     # public
     def cd(self, p):
@@ -165,12 +168,7 @@ class FM:
             if p.is_dir():
                 self.cd(p)
             elif p.is_file():
-                self.cd(p.parent)
-                self.ls()
-                for i, f in enumerate(self.files):
-                    if f.name == p.name:
-                        self.idx = i
-                        break
+                self.spawn(OPEN, str(p))
 
     def help(self):
         t = self.t
@@ -178,13 +176,14 @@ class FM:
         print(self.bold("Shortcuts") + "\n")
         for k, (desc, _) in self.keys.items():
             if desc:
-                print(f"  {self.yellow(f'{k:8}')} {desc}")
+                key = self.yellow(f"{k:8}")
+                print(f"  {key} {desc}")
         print(self.dim("\n  Press any key"))
         t.inkey()
 
     def jump(self, first):
         t = self.t
-        self.out(t.move_y(t.height - 1) + t.clear_eol + t.cnorm + first)
+        self.status(first, cursor=True)
         buf = first
         while True:
             key = t.inkey(timeout=1)
@@ -253,12 +252,16 @@ class FM:
         paths = self.targets()
         if not paths:
             return
-        self.prompt(f"rm {' '.join(p.name for p in paths)}? ")
+        names = " ".join(p.name for p in paths)
+        self.status(f"rm {names}? ")
         if self.t.inkey() != "y":
             return
         for p in paths:
             try:
-                shutil.rmtree(p) if p.is_dir() else p.unlink()
+                if p.is_dir():
+                    shutil.rmtree(p)
+                else:
+                    p.unlink()
             except OSError:
                 pass
         self.sel.clear()
@@ -328,7 +331,7 @@ class FM:
 
     def prompt(self, msg):
         t = self.t
-        self.out(t.move_y(t.height - 1) + t.clear_eol + t.cnorm + msg)
+        self.status(msg, cursor=True)
         buf = str()
         while True:
             key = t.inkey()
@@ -402,8 +405,14 @@ class FM:
         self.cutting = cut
         self.sel.clear()
 
+    # formatting
     def out(self, *args):
         print(*args, end=str(), flush=True)
+
+    def status(self, msg=str(), cursor=False):
+        t = self.t
+        cur = t.cnorm if cursor else str()
+        self.out(t.move_y(t.height - 1) + t.clear_eol + cur + msg)
 
     def bold(self, s):
         return self.t.bold + s + self.t.normal
