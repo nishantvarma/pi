@@ -72,7 +72,6 @@ class FM:
             "KEY_ENTER": (None, self.enter),
         }
         try:
-            print(t.title("pi"), end=str())
             with t.fullscreen(), t.cbreak(), t.hidden_cursor():
                 while True:
                     self.ls()
