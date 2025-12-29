@@ -409,7 +409,9 @@ class FM:
 
     def status(self, msg=str(), cursor=False):
         cur = self.t.cnorm if cursor else str()
-        self.out(self.t.move_y(self.t.height - 1) + self.t.clear_eol + cur + msg)
+        self.out(
+            self.t.move_y(self.t.height - 1) + self.t.clear_eol + cur + msg
+        )
 
     def bold(self, s):
         return self.t.bold + s + self.t.normal
