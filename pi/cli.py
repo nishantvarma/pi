@@ -72,6 +72,7 @@ class FM:
             "KEY_ENTER": (None, self.enter),
         }
         try:
+            print(t.title("pi"), end=str())
             with t.fullscreen(), t.cbreak(), t.hidden_cursor():
                 while True:
                     self.ls()
@@ -81,7 +82,7 @@ class FM:
                         continue
                     k = key.name or str(key)
                     if k in self.keys:
-                        if self.keys[k][1]() == "quit":
+                        if self.keys[k][1]():
                             break
                     elif key.isdigit():
                         self.jump(key)
@@ -287,7 +288,7 @@ class FM:
 
     def quit(self):
         self.out(self.t.exit_fullscreen + self.t.normal_cursor + self.t.clear)
-        return "quit"
+        return True
 
     def vc(self):
         self.spawn(VC)
