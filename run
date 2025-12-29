@@ -7,4 +7,4 @@ if not {
 	dir=`{readlink -f $1}
 }
 
-cd $home/src/pi && spawn 9 .venv/bin/python -m pi.cli $dir
+cd $home/src/pi && 9 .venv/bin/python -m pi.cli $dir
