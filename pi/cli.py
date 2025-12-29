@@ -171,15 +171,14 @@ class FM:
                 self.spawn(OPEN, str(p))
 
     def help(self):
-        t = self.t
-        self.out(t.home + t.clear)
+        self.out(self.t.home + self.t.clear)
         print(self.bold("Shortcuts") + "\n")
         for k, (desc, _) in self.keys.items():
             if desc:
                 key = self.yellow(f"{k:8}")
                 print(f"  {key} {desc}")
         print(self.dim("\n  Press any key"))
-        t.inkey()
+        self.t.inkey()
 
     def jump(self, first):
         t = self.t
@@ -287,8 +286,7 @@ class FM:
             self.sel.symmetric_difference_update({self.cur})
 
     def quit(self):
-        t = self.t
-        self.out(t.exit_fullscreen + t.normal_cursor + t.clear)
+        self.out(self.t.exit_fullscreen + self.t.normal_cursor + self.t.clear)
         return "quit"
 
     def vc(self):
@@ -410,9 +408,8 @@ class FM:
         print(*args, end=str(), flush=True)
 
     def status(self, msg=str(), cursor=False):
-        t = self.t
-        cur = t.cnorm if cursor else str()
-        self.out(t.move_y(t.height - 1) + t.clear_eol + cur + msg)
+        cur = self.t.cnorm if cursor else str()
+        self.out(self.t.move_y(self.t.height - 1) + self.t.clear_eol + cur + msg)
 
     def bold(self, s):
         return self.t.bold + s + self.t.normal
