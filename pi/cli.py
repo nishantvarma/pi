@@ -60,18 +60,18 @@ class FM:
             "V": ("Git gui", lambda: self.spawn("git", "gui")),
             "x": ("Cut", self.cut),
             "z": ("Fuzzy edit", lambda: self.spawn(FUZZYEDIT)),
-            " ": ("Marks", lambda: self.cd(self.marks)),
             "*": ("Chmod +x", self.chmod),
+            "-": ("Back", lambda: self.cd(self.last) if self.last else None),
             ".": ("Hidden", lambda: setattr(self, "hidden", not self.hidden)),
             "/": ("Search", self.search),
-            "-": ("Back", lambda: self.cd(self.last) if self.last else None),
+            "`": ("Marks", lambda: self.cd(self.marks)),
             "~": ("Home", lambda: self.cd(Path.home())),
             "\n": (None, self.enter),
             "KEY_DOWN": (None, lambda: self.mv(1)),
             "KEY_UP": (None, lambda: self.mv(-1)),
+            "KEY_ENTER": (None, self.enter),
             "KEY_LEFT": (None, lambda: self.cd(self.cwd.parent)),
             "KEY_RIGHT": (None, self.enter),
-            "KEY_ENTER": (None, self.enter),
         }
         try:
             with t.fullscreen(), t.cbreak(), t.hidden_cursor():
@@ -285,7 +285,7 @@ class FM:
 
     def toggle(self):
         if self.cur:
-            self.sel.symmetric_difference_update({self.cur})
+            self.sel ^= {self.cur}
 
     def quit(self):
         self.out(self.t.exit_fullscreen + self.t.normal_cursor + self.t.clear)
@@ -436,4 +436,4 @@ class FM:
 
 
 if __name__ == "__main__":
-    FM(sys.argv[1] if len(sys.argv) > 1 else ".").run()
+    FM(sys.argv[1] if sys.argv[1:] else ".").run()
