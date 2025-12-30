@@ -66,12 +66,12 @@ class FM:
             "`": ("Marks", lambda: self.cd(self.marks)),
             "~": ("Home", lambda: self.cd(Path.home())),
             "\n": (None, self.enter),
-            "\t": (None, lambda: self.cd(self.last) if self.last else None),
             "KEY_DOWN": (None, lambda: self.mv(1)),
-            "KEY_UP": (None, lambda: self.mv(-1)),
             "KEY_ENTER": (None, self.enter),
             "KEY_LEFT": (None, lambda: self.cd(self.cwd.parent)),
             "KEY_RIGHT": (None, self.enter),
+            "KEY_TAB": (None, lambda: self.cd(self.last) if self.last else None),
+            "KEY_UP": (None, lambda: self.mv(-1)),
         }
         try:
             with t.fullscreen(), t.cbreak(), t.hidden_cursor():
