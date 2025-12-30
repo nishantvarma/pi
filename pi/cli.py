@@ -47,7 +47,7 @@ class FM:
             "j": (None, lambda: self.mv(1)),
             "k": (None, lambda: self.mv(-1)),
             "l": ("Link", self.link),
-            "M": ("Mark", self.mark),
+            "m": ("Mark", self.mark),
             "n": ("Next", self.next),
             "N": ("Prev", self.prev),
             "o": ("Fuzzy open", lambda: self.spawn(FUZZYOPEN)),
