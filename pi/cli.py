@@ -116,6 +116,8 @@ class FM:
             title += self.dim(f" {mode}:{len(self.clip)}")
         print(title + t.clear_eol)
         h = t.height - 2
+        if len(self.files) > h:
+            h -= 1
         off = self.scroll(h)
         visible = self.files[off : off + h]
         for i, f in enumerate(visible, off):
