@@ -11,8 +11,8 @@ from pathlib import Path
 from blessed import Terminal
 
 EDIT = "edit"
-FUZZYEDIT = "fzedit"
-FUZZYOPEN = "fzopen"
+FZYEDIT = "fzedit"
+FZYOPEN = "fzopen"
 MARKS = ".config/pi/marks"
 OPEN = "open"
 SHELL = ["rlwrap", "--always-readline", "-c", "rc"]
@@ -50,7 +50,7 @@ class FM:
             "m": ("Mark", self.mark),
             "n": ("Next", self.next),
             "N": ("Prev", self.prev),
-            "o": ("Fuzzy open", lambda: self.spawn(FUZZYOPEN)),
+            "o": ("Fuzzy open", lambda: self.spawn(FZYOPEN)),
             "p": ("Paste", self.paste),
             "q": ("Quit", self.quit),
             "r": ("Rename", self.rename),
@@ -60,7 +60,7 @@ class FM:
             "v": ("VC", self.vc),
             "V": ("Git gui", lambda: self.spawn("git", "gui")),
             "x": ("Cut", self.cut),
-            "z": ("Fuzzy edit", lambda: self.spawn(FUZZYEDIT)),
+            "z": ("Fuzzy edit", lambda: self.spawn(FZYEDIT)),
             "*": ("Chmod +x", self.chmod),
             ".": ("Hidden", lambda: setattr(self, "hidden", not self.hidden)),
             "/": ("Search", self.search),
