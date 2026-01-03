@@ -63,7 +63,7 @@ class FM:
             "*": ("Chmod +x", self.chmod),
             ".": ("Hidden", lambda: setattr(self, "hidden", not self.hidden)),
             "/": ("Search", self.search),
-            "`": ("Marks", self.gomarks),
+            "`": ("Marks", lambda: self.cd(self.marks)),
             "~": ("Home", lambda: self.cd(Path.home())),
             "\n": (None, self.enter),
             "KEY_DOWN": (None, lambda: self.mv(1)),
@@ -183,12 +183,6 @@ class FM:
         if len(m) == 1:
             return str(m[0]) + "/" if m[0].is_dir() else str(m[0])
         return str(d / os.path.commonprefix([f.name for f in m]))
-
-    def gomarks(self):
-        self.cd(self.marks)
-        self.ls()
-        self.draw()
-        self.search()
 
     def help(self):
         self.out(self.t.home + self.t.clear)
