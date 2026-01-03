@@ -345,7 +345,7 @@ class FM:
         buf = str()
         while True:
             key = t.inkey()
-            if self.isesc(key):
+            if self.isesc(key) or key.name == "KEY_DOWN":
                 self.out(t.civis)
                 return None
             if self.isenter(key):
