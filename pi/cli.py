@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import readline
 import shutil
 import subprocess
 import sys
@@ -163,18 +162,27 @@ class FM:
             self.spawn(OPEN, str(self.cur))
 
     def goto(self):
-        with self.tty():
-            readline.parse_and_bind("tab: complete")
-            try:
-                path = input("goto: ")
-            except (EOFError, KeyboardInterrupt):
-                return
-        if path:
-            p = Path(path).expanduser().resolve()
-            if p.is_dir():
-                self.cd(p)
-            elif p.is_file():
-                self.spawn(OPEN, str(p))
+        s = self.prompt("goto: ", self.compl)
+        if not s:
+            return
+        p = Path(s).expanduser().resolve()
+        if p.is_dir():
+            self.cd(p)
+        elif p.is_file():
+            self.spawn(OPEN, str(p))
+
+    def compl(self, s):
+        p = Path(s).expanduser()
+        d, pre = (p, "") if p.is_dir() else (p.parent, p.name)
+        try:
+            m = [f for f in d.iterdir() if f.name.startswith(pre)]
+        except OSError:
+            return s
+        if not m:
+            return s
+        if len(m) == 1:
+            return str(m[0]) + "/" if m[0].is_dir() else str(m[0])
+        return str(d / os.path.commonprefix([f.name for f in m]))
 
     def gomarks(self):
         self.cd(self.marks)
@@ -339,7 +347,7 @@ class FM:
     def isbs(self, key):
         return key.name == "KEY_BACKSPACE" or key == chr(127)
 
-    def prompt(self, msg):
+    def prompt(self, msg, complete=None):
         t = self.t
         self.status(msg, cursor=True)
         buf = str()
@@ -355,6 +363,9 @@ class FM:
                 if buf:
                     buf = buf[:-1]
                     self.out(t.move_left + " " + t.move_left)
+            elif key.name == "KEY_TAB" and complete:
+                buf = complete(buf)
+                self.status(msg + buf, cursor=True)
             elif key.isprintable():
                 buf += key
                 self.out(key)
@@ -420,8 +431,9 @@ class FM:
         print(*args, end=str(), flush=True)
 
     def status(self, msg=str(), cursor=False):
+        pos = self.t.move_xy(0, self.t.height - 1)
         cur = self.t.cnorm if cursor else str()
-        self.out(self.t.move_y(self.t.height - 1) + self.t.clear_eol + cur + msg)
+        self.out(pos + self.t.clear_eol + cur + msg)
 
     def title(self, s):
         self.out(f"{chr(27)}]2;{s}{chr(7)}")
