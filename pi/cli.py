@@ -64,7 +64,7 @@ class FM:
             "*": ("Chmod +x", self.chmod),
             ".": ("Hidden", lambda: setattr(self, "hidden", not self.hidden)),
             "/": ("Search", self.search),
-            "`": ("Marks", lambda: self.cd(self.marks)),
+            "`": ("Marks", self.gomarks),
             "~": ("Home", lambda: self.cd(Path.home())),
             "\n": (None, self.enter),
             "KEY_DOWN": (None, lambda: self.mv(1)),
@@ -175,6 +175,12 @@ class FM:
                 self.cd(p)
             elif p.is_file():
                 self.spawn(OPEN, str(p))
+
+    def gomarks(self):
+        self.cd(self.marks)
+        self.ls()
+        self.draw()
+        self.search()
 
     def help(self):
         self.out(self.t.home + self.t.clear)
