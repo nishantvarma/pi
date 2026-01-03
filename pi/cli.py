@@ -14,7 +14,7 @@ FZYEDIT = "fzedit"
 FZYOPEN = "fzopen"
 MARKS = ".config/pi/marks"
 OPEN = "open"
-SHELL = ["rlwrap", "--always-readline", "-c", "rc"]
+SHELL = ["rlwrap", "-c", "rc"]
 TERM = "st"
 VC = "v"
 
