@@ -294,7 +294,11 @@ class FM:
 
     def sh(self):
         cmd = " ".join(SHELL) + "; true"
-        subprocess.Popen([TERM, "-e", "sh", "-c", cmd])
+        subprocess.Popen(
+            [TERM, "-e", "sh", "-c", cmd],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     def toggle(self):
         if self.cur:
